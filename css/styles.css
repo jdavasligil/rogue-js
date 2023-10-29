@@ -39,12 +39,12 @@ body {
 }
 #text-window {
     width: 936px;
-    height: 272px;
+    height: 232px;
     text-align: left;
 }
 #game-text {
     width: 896px;
-    height: 232px;
+    height: 192px;
     margin: auto;
     display: block;
     position: relative;
