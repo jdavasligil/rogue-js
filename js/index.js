@@ -1,26 +1,18 @@
 // Copyright (c) 2023 Jaedin Davasligil
-
+//
 // Rogue-JS is a pure javascript browser dungeon crawler.
 
-// DOM elements and context
+"use strict";
+
+// Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
 const text = document.getElementById("game-text");
 const ctx = canvas.getContext("2d");
 
-// Tweakable constants
+// Set tweakable constants
 const canvasWidth = 896;
 const canvasHeight = 504;
 const seed = 12345;
-
-// Random Number Generation
-function mulberry32(a) {
-    return function() {
-      var t = a += 0x6D2B79F5;
-      t = Math.imul(t ^ t >>> 15, t | 1);
-      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    }
-}
 
 const rng = mulberry32(seed);
 
