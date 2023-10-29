@@ -1,10 +1,18 @@
+// Copyright (c) 2023 Jaedin Davasligil
+
+// Rogue-JS is a pure javascript browser dungeon crawler.
+
+// DOM elements and context
 const canvas = document.getElementById("game-canvas");
 const text = document.getElementById("game-text");
 const ctx = canvas.getContext("2d");
-const canvas_width = 896;
-const canvas_height = 504;
+
+// Tweakable constants
+const canvasWidth = 896;
+const canvasHeight = 504;
 const seed = 12345;
 
+// Random Number Generation
 function mulberry32(a) {
     return function() {
       var t = a += 0x6D2B79F5;
@@ -25,26 +33,28 @@ function roll(n,m) {
   return total
 }
 
-function set_text(s) {
+// Text Window
+function setText(s) {
   text.innerText = s;
 }
-function append_text(s) {
+function appendText(s) {
   text.innerText += "\n\n" + s;
 }
-function write_description(s) {
+function writeDescription(s) {
   text.innerHTML += "<p style='color: yellow;'>" + s + "</p><br />";
 }
-function write_action(s) {
+function writeAction(s) {
   text.innerHTML += "<p style='color: red;'>" + s + "</p><br />";
 }
-function clear_text() {
+function clearText() {
   text.innerHTML = "";
 }
 
-write_description("The green slime appears sentient. It smells terribly strong of ammonia.");
-write_action("The slime attacks you!");
+// Testing
+writeDescription("The green slime appears sentient. It smells terribly strong of ammonia.");
+writeAction("The slime attacks you!");
 
 ctx.moveTo(0, 0);
-ctx.lineTo(canvas_width, canvas_height);
+ctx.lineTo(canvasWidth, canvasHeight);
 ctx.strokeStyle = "white"
 ctx.stroke();
