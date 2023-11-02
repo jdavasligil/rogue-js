@@ -50,6 +50,7 @@ const Tiles = {
   ClosedDoor: "+",
   StairsUp: "<",
   StairsDown: ">",
+  Player: "@",
 }
 
 const RenderingMode = {
@@ -61,6 +62,7 @@ const RenderingMode = {
 const player = {
   id: 1,
   position: {x: 0, y: 0},
+  tile: Tiles.Player,
   inventory: [],
   equipment: [],
   stats: {
@@ -225,6 +227,9 @@ function renderAscii(ctx, world) {
 
   var rowOffset = 0;
   var colOffset = 0;
+  var square = null;
+
+  // Draw Map Tiles
   for (var row = 0; row < canvasGrids; row++) {
     for (var col = 0; col < canvasGrids; col++) {
       rowOffset = world.camera.position.y - center + row;
@@ -234,19 +239,19 @@ function renderAscii(ctx, world) {
           && 0 <= colOffset
           && colOffset < world.height)
       {
-        ctx.fillText(world.grid[rowOffset * world.width + colOffset].tile,
-                     sideWidth + res * col + textOffsetX,
-                     (1 + row) * res - textOffsetY);
+        square = world.grid[rowOffset * world.width + colOffset];
+        if (square.entity_id === 0) {
+          ctx.fillText(square.tile,
+            sideWidth + res * col + textOffsetX,
+            (1 + row) * res - textOffsetY);
+        } else {
+          ctx.fillText(world.entities[square.entity_id - 1].tile,
+            sideWidth + res * col + textOffsetX,
+            (1 + row) * res - textOffsetY);
+        }
       }
     }
   }
-
-  // Old
-  //for (var row = 0; row < world.height; row++) {
-  //  for (var col = 0; col < world.width; col++) {
-  //    ctx.fillText(world.grid[row * world.width + col].tile, sideWidth + res * col + textOffsetX, (1 + row) * res - textOffsetY);
-  //  }
-  //}
 }
 
 function renderTiles(ctx, world) {
@@ -283,8 +288,9 @@ if (world.debug) {
   drawDebugStaticZone(ctx, world);
 }
 stringToGrid(testMap, world);
-spawnPlayer({x: 5, y: 3}, world, player);
-world.camera.position = world.entities[0].position;
+spawnPlayer({x: 10, y: 10}, world, player);
+//world.camera.position = world.entities[player.id - 1].position;
+world.camera.position = {x: 10, y: 10};
 drawGrid(ctx, world);
 
 //writeDescription("The green slime appears sentient. It smells terribly strong of ammonia.");
