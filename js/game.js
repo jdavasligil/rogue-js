@@ -18,6 +18,10 @@ const ctx = canvas.getContext("2d");
 const canvasWidth = 896;
 const canvasHeight = 504;
 const sideWidth = Math.floor((canvasWidth - canvasHeight) / 2); // 196
+
+const gridResolution = 24;
+const canvasGrids = Math.floor(canvasHeight / gridResolution);
+
 const seed = 12345;
 const debug = true;
 
@@ -82,8 +86,8 @@ const player = {
 // Camera determines the zoom level and position of the camera.
 // Always draws an N x N grid.
 const camera = {
-  pos: {x: 0, y: 0},
-  resolution: 24, // 1 tile = 50 Pixels
+  position: {x: 0, y: 0},
+  resolution: gridResolution, // 1 tile = 24 Pixels
 }
 
 // World is a collection of game data for the entire world
@@ -120,6 +124,7 @@ function stringToGrid(s, world) {
 }
 
 function spawnPlayer(pos, world, player) {
+  player.position = pos;
   world.grid[pos.y * world.width + pos.x].entity_id = 1;
   world.entities.push(player);
 }
@@ -159,50 +164,127 @@ function drawGrid(ctx, world) {
       renderAscii(ctx, world);
       break;
     case RenderingMode.Tile:
-      renderTile(ctx, world);
+      renderTiles(ctx, world);
       break;
     default:
       renderAscii(ctx, world);
   }
 }
 
-// Rendering with ASCII
-function renderAscii(ctx, world) {
-  ctx.font = "24px sans-serif";
-  ctx.fillStyle = dungeonOrange;
-  ctx.strokeStyle = "green";
-  ctx.lineWidth = 1;
-
-  const textOffset = 5;
+function drawDebugGrid(ctx, world) {
   const res = world.camera.resolution;
 
-  for (var row = 0; row < world.height; row++) {
-    for (var col = 0; col < world.width; col++) {
-      ctx.fillText(world.grid[row * world.width + col].tile, sideWidth + res * col, (1 + row) * res - textOffset);
-      if (world.debug) {
-        ctx.strokeRect(sideWidth + res * col, row * res, res, res);
-      }
-    }
+  ctx.strokeStyle = "green";
+
+  for (var n = 0; n < 22; n++) {
+    // Row Line
+    ctx.beginPath();
+    ctx.moveTo(sideWidth, n * res);
+    ctx.lineTo(sideWidth + canvasHeight, n * res);
+    ctx.stroke();
+    ctx.closePath();
+    // Col Line
+    ctx.beginPath();
+    ctx.moveTo(sideWidth + n * res, 0);
+    ctx.lineTo(sideWidth + n * res, canvasHeight);
+    ctx.stroke();
+    ctx.closePath();
   }
 }
 
-function renderTile(ctx, world) {
+function drawDebugStaticZone(ctx, world) {
+  const res = world.camera.resolution;
+  const zoneBuffer = 6;
+  const leftBound = sideWidth + zoneBuffer * res;
+  const rightBound = canvasWidth - sideWidth - zoneBuffer * res;
+  const topBound = zoneBuffer * res;
+  const lowerBound = canvasHeight - zoneBuffer * res;
+
+  ctx.strokeStyle = "red";
+
+  ctx.beginPath();
+  ctx.moveTo(leftBound, topBound);
+  ctx.lineTo(rightBound, topBound);
+  ctx.lineTo(rightBound, lowerBound);
+  ctx.lineTo(leftBound, lowerBound);
+  ctx.lineTo(leftBound, topBound);
+  ctx.stroke();
+  ctx.closePath();
+}
+
+// Rendering with ASCII
+// canvas grid center = camera position
+function renderAscii(ctx, world) {
+  const textOffsetX = 2;
+  const textOffsetY = 3;
+  const center = Math.floor(canvasGrids / 2);
+  const res = world.camera.resolution;
+
+  ctx.font = "24px sans-serif";
+  ctx.fillStyle = dungeonOrange;
+
+  var rowOffset = 0;
+  var colOffset = 0;
+  for (var row = 0; row < canvasGrids; row++) {
+    for (var col = 0; col < canvasGrids; col++) {
+      rowOffset = world.camera.position.y - center + row;
+      colOffset = world.camera.position.x - center + col;
+      if (0 <= rowOffset
+          && rowOffset < world.width
+          && 0 <= colOffset
+          && colOffset < world.height)
+      {
+        ctx.fillText(world.grid[rowOffset * world.width + colOffset].tile,
+                     sideWidth + res * col + textOffsetX,
+                     (1 + row) * res - textOffsetY);
+      }
+    }
+  }
+
+  // Old
+  //for (var row = 0; row < world.height; row++) {
+  //  for (var col = 0; col < world.width; col++) {
+  //    ctx.fillText(world.grid[row * world.width + col].tile, sideWidth + res * col + textOffsetX, (1 + row) * res - textOffsetY);
+  //  }
+  //}
+}
+
+function renderTiles(ctx, world) {
   renderAscii(ctx, world);
   console.log("Render Tiles");
 }
 
 // Testing
 const testMap =
-  "##############\n" + 
-  "#............#\n" +
-  "#............#\n" +
-  "#............#\n" +
-  "#............#\n" +
-  "#............#\n" +
-  "##############\n"
+  "#####################\n" + 
+  "#...................#\n" +
+  "#...................#\n" +
+  "#..#............##..#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#..##...........##..#\n" +
+  "#..##............#..#\n" +
+  "#...................#\n" +
+  "#...................#\n" +
+  "#####################\n"
 
+if (world.debug) {
+  drawDebugGrid(ctx, world);
+  drawDebugStaticZone(ctx, world);
+}
 stringToGrid(testMap, world);
 spawnPlayer({x: 5, y: 3}, world, player);
+world.camera.position = world.entities[0].position;
 drawGrid(ctx, world);
 
 //writeDescription("The green slime appears sentient. It smells terribly strong of ammonia.");
