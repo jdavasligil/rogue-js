@@ -37,6 +37,22 @@ function roll(n,m) {
   return total;
 }
 
+// Action Key Binds
+const Actions = {
+  MoveUp:    "ArrowUp",
+  MoveDown:  "ArrowDown",
+  MoveLeft:  "ArrowLeft",
+  MoveRight: "ArrowRight",
+}
+
+// Directions
+const Directions = {
+  Up:    {x: 0, y: -1},
+  Down:  {x: 0, y: 1},
+  Left:  {x: -1, y: 0},
+  Right: {x: 1, y: 0},
+}
+
 // Types of map tiles.
 const Tiles = {
   Floor:      ".",
@@ -88,10 +104,13 @@ const RenderingMode = {
 }
 
 // Player Data
+// Player is an entity.
+// Every entity has an id, position, tile, and collision flag.
 const player = {
   id: 1,
   position: {x: 0, y: 0},
   tile: Tiles.Player,
+  collision: false,
   inventory: [],
   equipment: [],
   stats: {
@@ -290,12 +309,78 @@ function renderTiles(ctx, world) {
   console.log("Render Tiles");
 }
 
-// Event Listeners
-function waitingKeypress() {
+// Handle player movement and collision
+// Takes in a direction map (up down left right)
+// Returns true for success, false for failure to move
+function moveEntity(entity_id, dir, world) {
+  const oldPosition = world.entities[entity_id - 1].position;
+  const currSquare = world.grid[oldPosition.y * world.width + oldPosition.x];
+
+  const newPosition = {
+    x: oldPosition.x + dir.x,
+    y: oldPosition.y + dir.y,
+  }
+
+  // Check bounds
+  if (newPosition.x < 0
+   || newPosition.x >= world.width
+   || newPosition.y < 0
+   || newPosition.y >= world.height) {
+    return false;
+  }
+
+  // Check collision for terrain and entities
+  const nextSquare = world.grid[newPosition.y * world.width + newPosition.x];
+  if (nextSquare.collision) {
+    return false;
+  }
+  if (nextSquare.entity_id) {
+    console.log(nextSquare.entity_id);
+    if (world.entities[nextSquare.entity_id].collision) {
+      return false;
+    }
+  }
+
+  currSquare.entity_id = 0;
+  nextSquare.entity_id = entity_id;
+  world.entities[0].position = newPosition;
+
+  return true;
+}
+
+// Event Listener
+function waitingKeypress(ctx, world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
-      if (e.keyCode === 38) {
+      var keyDetected = false;
+      var redrawTriggered = false;
+
+      switch (e.key) {
+        case Actions.MoveUp:
+          keyDetected = true;
+          redrawTriggered = moveEntity(1, Directions.Up, world);
+          break;
+        case Actions.MoveDown:
+          keyDetected = true;
+          redrawTriggered = moveEntity(1, Directions.Down, world);
+          break;
+        case Actions.MoveLeft:
+          keyDetected = true;
+          redrawTriggered = moveEntity(1, Directions.Left, world);
+          break;
+        case Actions.MoveRight:
+          keyDetected = true;
+          redrawTriggered = moveEntity(1, Directions.Right, world);
+          break;
+      }
+
+      if (redrawTriggered) {
+        clearGrid(ctx);
+        drawGrid(ctx, world);
+        console.log("REDRAW!");
+      }
+      if (keyDetected) {
         document.removeEventListener('keydown', onKeyHandler);
         resolve();
       }
@@ -304,10 +389,10 @@ function waitingKeypress() {
 }
 
 // Game Loop
-async function runGame() {
+async function runGame(ctx, world) {
   while (true) {
     console.log('Awaiting keypress..');
-    await waitingKeypress();
+    await waitingKeypress(ctx, world);
     console.log('Done!');
   }
 }
@@ -349,7 +434,7 @@ drawSideBar(ctx, canvasWidth - sideWidth, 0);
 drawGrid(ctx, world);
 clearGrid(ctx, world);
 
-runGame();
+runGame(ctx, world);
 
 //writeDescription("The green slime appears sentient. It smells terribly strong of ammonia.");
 //writeAction("The slime attacks you!");
