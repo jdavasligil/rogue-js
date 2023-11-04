@@ -1,6 +1,6 @@
 // Copyright (c) 2023 Jaedin Davasligil
 //
-// Rogue-JS is a pure javascript browser dungeon crawler.
+// Rogue-JS is a pure javascript browser Colors. crawler.
 
 // TODO
 // [ ] Character Creation
@@ -23,12 +23,7 @@ const gridResolution = 24;
 const canvasGrids = Math.floor(canvasHeight / gridResolution);
 
 const seed = 12345;
-const debug = true;
-
-// Color Palette
-const dungeonBrown = "#241b06";
-const dungeonDarkBrown = "#151004";
-const dungeonOrange = "#EFBC74";
+const debug = false;
 
 // RNG
 const rng = mulberry32(seed);
@@ -44,13 +39,47 @@ function roll(n,m) {
 
 // Types of map tiles.
 const Tiles = {
-  Floor: ".",
-  Wall: "#",
-  OpenDoor: "'",
+  Floor:      ".",
+  Wall:       "#",
+  OpenDoor:   "'",
   ClosedDoor: "+",
-  StairsUp: "<",
+  StairsUp:   "<",
   StairsDown: ">",
-  Player: "@",
+  Player:     "@",
+}
+
+// Color Palette
+const Colors = {
+  White:     "#E1D9D1",
+  Slate:     "#3C3A2D",
+  Brown:     "#684E11",
+  DarkBrown: "#151004",
+  Orange:    "#EFBC74",
+  MagicBlue: "#0784b5",
+}
+
+// Takes in a tile (string) and returns a color (string)
+// Used in the Ascii Renderer to determine default tile colors
+// Can be overwritten by colors set by an entity
+function matchTileColor(tile) {
+  switch(tile) {
+    case Tiles.Floor:
+      return Colors.Slate;
+
+    case Tiles.OpenDoor:
+    case Tiles.ClosedDoor:
+      return Colors.Brown;
+
+    case Tiles.Player:
+      return Colors.MagicBlue;
+
+    case Tiles.StairsUp:
+    case Tiles.StairsDown:
+      return Colors.White;
+
+    default:
+      return Colors.Orange;
+  }
 }
 
 const RenderingMode = {
@@ -96,7 +125,7 @@ const camera = {
 const world = {
   grid: [],
   camera: camera,
-  renderer: RenderingMode.Tile,
+  renderer: RenderingMode.Ascii,
   entities: [],
   width: 0,
   height: 0,
@@ -151,11 +180,11 @@ function clearText() {
 // Sidebar window
 function drawSideBar(ctx, x, y) {
   const frameWidth = 4;
-  ctx.fillStyle = dungeonBrown;
-  ctx.strokeStyle = dungeonDarkBrown;
+  ctx.fillStyle = Colors.Brown;
+  ctx.strokeStyle = Colors.DarkBrown;
   ctx.fillRect(x, y, sideWidth, canvasHeight);
   ctx.strokeRect(x, y, sideWidth, canvasHeight);
-  ctx.fillStyle = dungeonDarkBrown;
+  ctx.fillStyle = Colors.DarkBrown;
   ctx.fillRect(x + frameWidth, y + frameWidth, sideWidth - frameWidth * 2, canvasHeight - frameWidth * 2);
 }
 
@@ -171,6 +200,10 @@ function drawGrid(ctx, world) {
     default:
       renderAscii(ctx, world);
   }
+}
+
+function clearGrid(ctx) {
+  ctx.clearRect(sideWidth, 0, canvasWidth - sideWidth * 2, canvasHeight);
 }
 
 function drawDebugGrid(ctx, world) {
@@ -223,7 +256,7 @@ function renderAscii(ctx, world) {
   const res = world.camera.resolution;
 
   ctx.font = "24px sans-serif";
-  ctx.fillStyle = dungeonOrange;
+  ctx.fillStyle = Colors.White;
 
   var rowOffset = 0;
   var colOffset = 0;
@@ -240,15 +273,13 @@ function renderAscii(ctx, world) {
           && colOffset < world.height)
       {
         square = world.grid[rowOffset * world.width + colOffset];
-        if (square.entity_id === 0) {
-          ctx.fillText(square.tile,
-            sideWidth + res * col + textOffsetX,
-            (1 + row) * res - textOffsetY);
-        } else {
-          ctx.fillText(world.entities[square.entity_id - 1].tile,
-            sideWidth + res * col + textOffsetX,
-            (1 + row) * res - textOffsetY);
+        if (square.entity_id !== 0) {
+          square = world.entities[square.entity_id - 1];
         }
+        ctx.fillStyle = matchTileColor(square.tile);
+        ctx.fillText(square.tile,
+          sideWidth + res * col + textOffsetX,
+          (1 + row) * res - textOffsetY);
       }
     }
   }
@@ -259,6 +290,28 @@ function renderTiles(ctx, world) {
   console.log("Render Tiles");
 }
 
+// Event Listeners
+function waitingKeypress() {
+  return new Promise((resolve) => {
+    document.addEventListener('keydown', onKeyHandler);
+    function onKeyHandler(e) {
+      if (e.keyCode === 38) {
+        document.removeEventListener('keydown', onKeyHandler);
+        resolve();
+      }
+    }
+  });
+}
+
+// Game Loop
+async function runGame() {
+  while (true) {
+    console.log('Awaiting keypress..');
+    await waitingKeypress();
+    console.log('Done!');
+  }
+}
+
 // Testing
 const testMap =
   "#####################\n" + 
@@ -267,9 +320,9 @@ const testMap =
   "#..#............##..#\n" +
   "#...................#\n" +
   "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
+  "#......>.....'......#\n" +
+  "#......<............#\n" +
+  "#...........+.......#\n" +
   "#...................#\n" +
   "#...................#\n" +
   "#...................#\n" +
@@ -291,7 +344,12 @@ stringToGrid(testMap, world);
 spawnPlayer({x: 10, y: 10}, world, player);
 //world.camera.position = world.entities[player.id - 1].position;
 world.camera.position = {x: 10, y: 10};
+drawSideBar(ctx, 0, 0);
+drawSideBar(ctx, canvasWidth - sideWidth, 0);
 drawGrid(ctx, world);
+clearGrid(ctx, world);
+
+runGame();
 
 //writeDescription("The green slime appears sentient. It smells terribly strong of ammonia.");
 //writeAction("The slime attacks you!");
