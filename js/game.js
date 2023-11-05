@@ -47,9 +47,9 @@ const Actions = {
 
 // Directions
 const Directions = {
-  Up:    {x: 0, y: -1},
+  Up:    {x: 0, y:-1},
   Down:  {x: 0, y: 1},
-  Left:  {x: -1, y: 0},
+  Left:  {x:-1, y: 0},
   Right: {x: 1, y: 0},
 }
 
@@ -72,6 +72,11 @@ const Colors = {
   DarkBrown: "#151004",
   Orange:    "#EFBC74",
   MagicBlue: "#0784b5",
+}
+
+// Event Signals
+const Events = {
+  entityMoved: 0,
 }
 
 // Takes in a tile (string) and returns a color (string)
@@ -142,10 +147,11 @@ const camera = {
 
 // World is a collection of game data for the entire world
 const world = {
-  grid: [],
+  grid: [],     // Array of Square objects
+  entities: [], // Array of Entity objects (player, monsters, doors, etc.)
+  events: [],   // Array of Event signals
   camera: camera,
   renderer: RenderingMode.Ascii,
-  entities: [],
   width: 0,
   height: 0,
   debug: debug,
@@ -329,11 +335,14 @@ function moveEntity(entity_id, dir, world) {
     return false;
   }
 
-  // Check collision for terrain and entities
   const nextSquare = world.grid[newPosition.y * world.width + newPosition.x];
+
+  // Check collision for terrain
   if (nextSquare.collision) {
     return false;
   }
+
+  // Check collision for entities
   if (nextSquare.entity_id) {
     console.log(nextSquare.entity_id);
     if (world.entities[nextSquare.entity_id].collision) {
@@ -344,42 +353,37 @@ function moveEntity(entity_id, dir, world) {
   currSquare.entity_id = 0;
   nextSquare.entity_id = entity_id;
   world.entities[0].position = newPosition;
+  world.events.push(Events.entityMoved);
 
   return true;
 }
 
 // Event Listener
-function waitingKeypress(ctx, world) {
+function waitingKeypress(world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
       var keyDetected = false;
-      var redrawTriggered = false;
 
       switch (e.key) {
         case Actions.MoveUp:
           keyDetected = true;
-          redrawTriggered = moveEntity(1, Directions.Up, world);
+          moveEntity(1, Directions.Up, world);
           break;
         case Actions.MoveDown:
           keyDetected = true;
-          redrawTriggered = moveEntity(1, Directions.Down, world);
+          moveEntity(1, Directions.Down, world);
           break;
         case Actions.MoveLeft:
           keyDetected = true;
-          redrawTriggered = moveEntity(1, Directions.Left, world);
+          moveEntity(1, Directions.Left, world);
           break;
         case Actions.MoveRight:
           keyDetected = true;
-          redrawTriggered = moveEntity(1, Directions.Right, world);
+          moveEntity(1, Directions.Right, world);
           break;
       }
 
-      if (redrawTriggered) {
-        clearGrid(ctx);
-        drawGrid(ctx, world);
-        console.log("REDRAW!");
-      }
       if (keyDetected) {
         document.removeEventListener('keydown', onKeyHandler);
         resolve();
@@ -388,12 +392,23 @@ function waitingKeypress(ctx, world) {
   });
 }
 
+function handleEvents(ctx, world) {
+  var e = undefined;
+  while ((e = world.events.pop()) !== undefined) {
+    switch (e) {
+      case Events.entityMoved:
+        clearGrid(ctx);
+        drawGrid(ctx, world);
+        break;
+    }
+  }
+}
+
 // Game Loop
 async function runGame(ctx, world) {
   while (true) {
-    console.log('Awaiting keypress..');
-    await waitingKeypress(ctx, world);
-    console.log('Done!');
+    await waitingKeypress(world);
+    handleEvents(ctx, world);
   }
 }
 
@@ -432,7 +447,6 @@ world.camera.position = {x: 10, y: 10};
 drawSideBar(ctx, 0, 0);
 drawSideBar(ctx, canvasWidth - sideWidth, 0);
 drawGrid(ctx, world);
-clearGrid(ctx, world);
 
 runGame(ctx, world);
 
