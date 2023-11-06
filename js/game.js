@@ -77,7 +77,37 @@ const Colors = {
 // Event Signals
 const Events = {
   entityMoved: 0,
-  playerMoved: 1,
+}
+
+// Ancestries
+const Ancestries = {
+  Drow: "Drow",
+  Duergar: "Duergar",
+  Dwarf: "Dwarf",
+  Elf: "Elf",
+  Gnome: "Gnome",
+  HalfElf: "Half-elf",
+  HalfOrc: "Half-orc",
+  Human: "Human",
+  Svirfneblin: "Svirfneblin",
+}
+
+// Classes
+const Classes = {
+  Acrobat: "Acrobat",
+  Assassin: "Assassin",
+  Bard: "Bard",
+  Thief: "Thief",
+  Barbarian: "Barbarian",
+  Cleric: "Cleric",
+  Druid: "Druid",
+  Fighter: "Fighter",
+  Illusionist: "Illusionist",
+  Knight: "Knight",
+  MagicUser: "Magic-User",
+  Paladin: "Paladin",
+  Ranger: "Ranger",
+  Thief: "Thief",
 }
 
 // Takes in a tile (string) and returns a color (string)
@@ -110,15 +140,25 @@ const RenderingMode = {
 }
 
 // Player Data
-// Player is an entity.
-// Every entity has an id, position, tile, and collision flag.
+// Player is an entity
+// Every entity has an id, position, tile, and collision flag
 const player = {
   id: 1,
   position: {x: 0, y: 0},
   tile: Tiles.Player,
   collision: false,
+  visible: true,
   inventory: [],
   equipment: [],
+  name: "",
+  ancestry: Ancestries.Human,
+  class: Classes.Fighter,
+  alignment: 0, // -5 to 5 (Chaos, Law)
+  level: 1,
+  experience: 0,
+  gold: 0,
+  weight: 0, // in gold coins
+  speed: 24, // squares per turn (10 in-game minutes)
   stats: {
       str: 0,
       dex: 0,
@@ -126,9 +166,30 @@ const player = {
       int: 0,
       wis: 0,
       cha: 0,
+      maxStr: 0,
+      maxDex: 0,
+      maxCon: 0,
+      maxInt: 0,
+      maxWis: 0,
+      maxCha: 0,
     },
-  hitpoints: 0,
+  saves: {
+      death: 0,
+      wands: 0,
+      paralysis: 0,
+      breath: 0,
+      spells: 0,
+    },
+  hitPoints: 0,
+  maxHitPoints: 0,
   armor: 0,
+  maxArmor: 0,
+  attack: 0, // 20 - THAC0
+}
+
+// Bob is a prototypical NPC
+const bob = {
+  id: 0,
 }
 
 // Example of a grid square object
@@ -156,6 +217,7 @@ const world = {
   renderer: RenderingMode.Ascii,
   width: 0,
   height: 0,
+  turns: 0,
   debug: debug,
 }
 
@@ -181,10 +243,15 @@ function stringToGrid(s, world) {
   }
 }
 
-function spawnPlayer(pos, world, player) {
-  player.position = pos;
-  world.grid[pos.y * world.width + pos.x].entity_id = 1;
-  world.entities.push(player);
+// Our currenty entity system maps entities directly by index for fast lookup
+// the downside is that it is difficult to remove entities
+// one option is to set the deleted entity in the array to null which
+// allows for cleanup, but fragments the array and will require null checks
+function spawnEntity(pos, world, entity) {
+  entity.position = pos;
+  entity.id = world.entities.length + 1;
+  world.grid[pos.y * world.width + pos.x].entity_id = entity.id;
+  world.entities.push(entity);
 }
 
 // Text Window
@@ -419,15 +486,18 @@ function handleEvents(ctx, world) {
   while ((e = world.events.pop()) !== undefined) {
     switch (e) {
       case Events.entityMoved:
-        if (!gridDrawn) {
-          clearGrid(ctx);
-          drawGrid(ctx, world);
-          if (world.debug) {
-            drawDebugGrid(ctx, world);
-            drawDebugStaticZone(ctx, world);
-          }
-          gridDrawn = true;
+        if (gridDrawn) {
+          console.log("Grid already Drawn");
+          break;
         }
+        console.log("Performing Redraw!");
+        clearGrid(ctx);
+        drawGrid(ctx, world);
+        if (world.debug) {
+          drawDebugGrid(ctx, world);
+          drawDebugStaticZone(ctx, world);
+        }
+        gridDrawn = true;
         break;
     }
   }
@@ -441,43 +511,45 @@ async function runGame(ctx, world) {
   }
 }
 
-// Testing
-const testMap =
-  "#####################\n" + 
-  "#...................#\n" +
-  "#...................#\n" +
-  "#..#............##..#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#......>.....'......#\n" +
-  "#......<............#\n" +
-  "#...........+.......#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#..##...........##..#\n" +
-  "#..##............#..#\n" +
-  "#...................#\n" +
-  "#...................#\n" +
-  "#####################\n"
+function initializeWorld(ctx, world) {
+  const testMap =
+    "#####################\n" + 
+    "#...................#\n" +
+    "#...................#\n" +
+    "#..#............##..#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#......>.....'......#\n" +
+    "#......<............#\n" +
+    "#...........+.......#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#..##...........##..#\n" +
+    "#..##............#..#\n" +
+    "#...................#\n" +
+    "#...................#\n" +
+    "#####################\n"
 
-if (world.debug) {
-  drawDebugGrid(ctx, world);
-  drawDebugStaticZone(ctx, world);
+  stringToGrid(testMap, world);
+
+  spawnEntity({x: 10, y: 10}, world, player);
+
+  world.camera.position = world.entities[player.id - 1].position;
+
+  drawSideBar(ctx, 0, 0);
+  drawSideBar(ctx, canvasWidth - sideWidth, 0);
+  drawGrid(ctx, world);
+  if (world.debug) {
+    drawDebugGrid(ctx, world);
+    drawDebugStaticZone(ctx, world);
+  }
 }
-stringToGrid(testMap, world);
-spawnPlayer({x: 10, y: 10}, world, player);
-//world.camera.position = world.entities[player.id - 1].position;
-world.camera.position = {x: 10, y: 10};
-drawSideBar(ctx, 0, 0);
-drawSideBar(ctx, canvasWidth - sideWidth, 0);
-drawGrid(ctx, world);
 
+// GAME
+initializeWorld(ctx, world);
 runGame(ctx, world);
-
-//writeDescription("The green slime appears sentient. It smells terribly strong of ammonia.");
-//writeAction("The slime attacks you!");
