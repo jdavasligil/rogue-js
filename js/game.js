@@ -23,7 +23,7 @@ const gridResolution = 24;
 const canvasGrids = Math.floor(canvasHeight / gridResolution);
 
 const seed = 12345;
-const debug = false;
+const debug = true;
 
 // RNG
 const rng = mulberry32(seed);
@@ -77,6 +77,7 @@ const Colors = {
 // Event Signals
 const Events = {
   entityMoved: 0,
+  playerMoved: 1,
 }
 
 // Takes in a tile (string) and returns a color (string)
@@ -143,6 +144,7 @@ const player = {
 const camera = {
   position: {x: 0, y: 0},
   resolution: gridResolution, // 1 tile = 24 Pixels
+  moveBuffer: 4, // Tile radius around camera before automatic movement.
 }
 
 // World is a collection of game data for the entire world
@@ -254,11 +256,14 @@ function drawDebugGrid(ctx, world) {
 
 function drawDebugStaticZone(ctx, world) {
   const res = world.camera.resolution;
-  const zoneBuffer = 6;
-  const leftBound = sideWidth + zoneBuffer * res;
-  const rightBound = canvasWidth - sideWidth - zoneBuffer * res;
-  const topBound = zoneBuffer * res;
-  const lowerBound = canvasHeight - zoneBuffer * res;
+  const zoneBuffer = world.camera.moveBuffer;
+  const halfWidth = canvasWidth / 2;
+  const halfHeight = canvasHeight / 2;
+  const halfRes = res / 2;
+  const leftBound = halfWidth - zoneBuffer * res - halfRes;
+  const rightBound = halfWidth + zoneBuffer * res + halfRes;
+  const topBound = halfHeight + zoneBuffer * res + halfRes;
+  const lowerBound = halfHeight - zoneBuffer * res - halfRes;
 
   ctx.strokeStyle = "red";
 
@@ -315,6 +320,17 @@ function renderTiles(ctx, world) {
   console.log("Render Tiles");
 }
 
+// Handle camera movement
+function moveCamera(dir, world) {
+  const buffer = world.camera.moveBuffer;
+  const dx = Math.abs(world.entities[0].position.x - world.camera.position.x);
+  const dy = Math.abs(world.entities[0].position.y - world.camera.position.y);
+  if (dx > buffer || dy > buffer) {
+    world.camera.position.x += dir.x;
+    world.camera.position.y += dir.y;
+  }
+}
+
 // Handle player movement and collision
 // Takes in a direction map (up down left right)
 // Returns true for success, false for failure to move
@@ -355,6 +371,11 @@ function moveEntity(entity_id, dir, world) {
   world.entities[0].position = newPosition;
   world.events.push(Events.entityMoved);
 
+  // If the entity is the player, handle camera movement
+  if (entity_id === player.id) {
+    moveCamera(dir, world);
+  }
+
   return true;
 }
 
@@ -394,11 +415,19 @@ function waitingKeypress(world) {
 
 function handleEvents(ctx, world) {
   var e = undefined;
+  var gridDrawn = false;
   while ((e = world.events.pop()) !== undefined) {
     switch (e) {
       case Events.entityMoved:
-        clearGrid(ctx);
-        drawGrid(ctx, world);
+        if (!gridDrawn) {
+          clearGrid(ctx);
+          drawGrid(ctx, world);
+          if (world.debug) {
+            drawDebugGrid(ctx, world);
+            drawDebugStaticZone(ctx, world);
+          }
+          gridDrawn = true;
+        }
         break;
     }
   }
