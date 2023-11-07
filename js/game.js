@@ -86,7 +86,7 @@ const Colors = {
 
 // Event Signals
 const Events = {
-  entityMoved: 0,
+  playerMoved: 0,
 }
 
 // Ancestries
@@ -607,11 +607,11 @@ function moveEntity(entity_id, dir, world) {
   currSquare.entity_id = 0;
   nextSquare.entity_id = entity_id;
   world.entities[entity_id - 1].position = newPosition;
-  world.events.push(Events.entityMoved);
 
   // If the entity is the player, handle camera movement
   if (entity_id === player.id) {
     moveCamera(dir, world);
+    world.events.push(Events.playerMoved);
   }
 
   return true;
@@ -654,20 +654,15 @@ function waitingKeypress(world) {
 
 function handleEvents(ctx, world) {
   var e = undefined;
-  var gridDrawn = false;
   while ((e = world.events.pop()) !== undefined) {
     switch (e) {
-      case Events.entityMoved:
-        if (gridDrawn) {
-          break;
-        }
+      case Events.playerMoved:
         clearGrid(ctx);
         drawGrid(ctx, world);
         if (world.debug) {
           drawDebugGrid(ctx, world);
           drawDebugStaticZone(ctx, world);
         }
-        gridDrawn = true;
         break;
     }
   }
