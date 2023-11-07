@@ -45,6 +45,15 @@ const Actions = {
   MoveRight: "ArrowRight",
 }
 
+// Interaction Mode
+// Changes how the player interacts with the environment through movement
+const InteractMode = {
+  Interact: 0, // Open door, initiate trade
+  Combat:   1, // Attack, break object / door
+  Social:   2, // Attempt to initiate dialogue
+  Stealth:  3, // Pick lock, pick pockets, steal
+}
+
 // Directions
 const Directions = {
   Up:    {x: 0, y:-1},
@@ -62,6 +71,7 @@ const Tiles = {
   StairsUp:   "<",
   StairsDown: ">",
   Player:     "@",
+  Merchant:   "m",
 }
 
 // Color Palette
@@ -110,6 +120,11 @@ const Classes = {
   Thief: "Thief",
 }
 
+const RenderingMode = {
+  Ascii: 0,
+  Tile: 1,
+}
+
 // Takes in a tile (string) and returns a color (string)
 // Used in the Ascii Renderer to determine default tile colors
 // Can be overwritten by colors set by an entity
@@ -127,16 +142,12 @@ function matchTileColor(tile) {
 
     case Tiles.StairsUp:
     case Tiles.StairsDown:
+    case Tiles.Merchant:
       return Colors.White;
 
     default:
       return Colors.Orange;
   }
-}
-
-const RenderingMode = {
-  Ascii: 0,
-  Tile: 1,
 }
 
 // Player Data
@@ -146,10 +157,8 @@ const player = {
   id: 1,
   position: {x: 0, y: 0},
   tile: Tiles.Player,
-  collision: false,
+  collision: true,
   visible: true,
-  inventory: [],
-  equipment: [],
   name: "",
   ancestry: Ancestries.Human,
   class: Classes.Fighter,
@@ -158,6 +167,8 @@ const player = {
   experience: 0,
   gold: 0,
   weight: 0, // in gold coins
+  inventory: [],
+  equipment: [],
   speed: 24, // squares per turn (10 in-game minutes)
   stats: {
       str: 0,
@@ -182,14 +193,51 @@ const player = {
     },
   hitPoints: 0,
   maxHitPoints: 0,
-  armor: 0,
-  maxArmor: 0,
+  armorClass: 0,
+  maxArmorClass: 0,
   attack: 0, // 20 - THAC0
 }
 
 // Bob is a prototypical NPC
 const bob = {
   id: 0,
+  position: {x: 0, y: 0},
+  tile: Tiles.Merchant,
+  collision: true,
+  visible: true,
+  name: "Bob",
+  type: "Normal Human",
+  description: "A bald man with a noticable underbite.",
+  isPerson: true,
+  morale: 7,
+  alignment: 0, // -5 to 5 (Chaos, Law)
+  level: 0,
+  experience: 0,
+  gold: 10,
+  inventory: [],
+  speed: 24, // squares per turn (10 in-game minutes)
+  saves: {
+      death: 14,
+      wands: 15,
+      paralysis: 16,
+      breath: 17,
+      spells: 18,
+    },
+  immunity: {
+      acid: 0,
+      cold: 0,
+      electric: 0,
+      fire: 0,
+      mundane: 0,
+      poison: 0,
+      sleep: 0,
+      petrification: 0,
+    },
+  hitPoints: 1,
+  maxHitPoints: 1,
+  armorClass: 9,
+  maxArmorClass: 9,
+  attack: 0, // 20 - THAC0
 }
 
 // Example of a grid square object
@@ -220,6 +268,129 @@ const world = {
   turns: 0,
   debug: debug,
 }
+
+// Returns a monsters attack bonus based on their level
+function monsterAttackBonus(level) {
+  switch(level) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+      return level;
+    case 8:
+    case 9:
+      return 8;
+    case 10:
+    case 11:
+      return 9;
+    case 12:
+    case 13:
+      return 10;
+    case 14:
+    case 15:
+      return 11;
+    case 16:
+    case 17:
+      return 12;
+    case 18:
+    case 19:
+      return 13;
+    case 20:
+    case 21:
+      return 14;
+    default:
+      return 15;
+  }
+}
+
+// returns a monsters saving throw values based on level
+function monsterSavingThrows(level) {
+  const saves = {
+      death:     14,
+      wands:     15,
+      paralysis: 16,
+      breath:    17,
+      spells:    18,
+    };
+
+  switch(level) {
+    case 0:
+      break;
+    case 1:
+    case 2:
+    case 3:
+      saves.death =     12;
+      saves.wands =     13;
+      saves.paralysis = 14;
+      saves.breath =    15;
+      saves.spells =    16;
+      break;
+    case 4:
+    case 5:
+    case 6:
+      saves.death =     10;
+      saves.wands =     11;
+      saves.paralysis = 12;
+      saves.breath =    13;
+      saves.spells =    14;
+    case 7:
+    case 8:
+    case 9:
+      saves.death =      8;
+      saves.wands =      9;
+      saves.paralysis = 10;
+      saves.breath =    10;
+      saves.spells =    12;
+      break;
+    case 10:
+    case 11:
+    case 12:
+      saves.death =      6;
+      saves.wands =      7;
+      saves.paralysis =  8;
+      saves.breath =     8;
+      saves.spells =    10;
+    case 13:
+    case 14:
+    case 15:
+      saves.death =      4;
+      saves.wands =      5;
+      saves.paralysis =  6;
+      saves.breath =     5;
+      saves.spells =     8;
+    case 16:
+    case 17:
+    case 18:
+      saves.death =      2;
+      saves.wands =      3;
+      saves.paralysis =  4;
+      saves.breath =     3;
+      saves.spells =     6;
+      break;
+    case 19:
+    case 20:
+    case 21:
+      saves.death =      2;
+      saves.wands =      2;
+      saves.paralysis =  2;
+      saves.breath =     2;
+      saves.spells =     4;
+      break;
+    default:
+      saves.death =      2;
+      saves.wands =      2;
+      saves.paralysis =  2;
+      saves.breath =     2;
+      saves.spells =     2;
+  }
+
+  return saves;
+}
+
 
 // Map Generation
 function stringToGrid(s, world) {
@@ -427,15 +598,14 @@ function moveEntity(entity_id, dir, world) {
 
   // Check collision for entities
   if (nextSquare.entity_id) {
-    console.log(nextSquare.entity_id);
-    if (world.entities[nextSquare.entity_id].collision) {
+    if (world.entities[nextSquare.entity_id - 1].collision) {
       return false;
     }
   }
 
   currSquare.entity_id = 0;
   nextSquare.entity_id = entity_id;
-  world.entities[0].position = newPosition;
+  world.entities[entity_id - 1].position = newPosition;
   world.events.push(Events.entityMoved);
 
   // If the entity is the player, handle camera movement
@@ -461,6 +631,7 @@ function waitingKeypress(world) {
         case Actions.MoveDown:
           keyDetected = true;
           moveEntity(1, Directions.Down, world);
+          moveEntity(2, Directions.Down, world);
           break;
         case Actions.MoveLeft:
           keyDetected = true;
@@ -538,6 +709,7 @@ function initializeWorld(ctx, world) {
   stringToGrid(testMap, world);
 
   spawnEntity({x: 10, y: 10}, world, player);
+  spawnEntity({x: 11, y: 10}, world, bob);
 
   world.camera.position = world.entities[player.id - 1].position;
 
@@ -551,5 +723,7 @@ function initializeWorld(ctx, world) {
 }
 
 // GAME
+// If character exists in localStorage -> Load character and continue
+// else -> run character creation and initialize a new world
 initializeWorld(ctx, world);
 runGame(ctx, world);
