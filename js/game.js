@@ -12,6 +12,7 @@
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
 const text = document.getElementById("game-text");
+const bgArt = document.getElementById("bg-art");
 const ctx = canvas.getContext("2d");
 
 // Set tweakable constants
@@ -37,12 +38,29 @@ function roll(n,m) {
   return total;
 }
 
+// Possible game states
+const WorldState = {
+  MainMenu: 0,
+  Creation: 1,
+  Loading:  2,
+  Town:     3,
+  Dungeon:  4,
+}
+
+const MainMenuOptions = {
+  Continue: "Continue",
+  NewGame:  "New Game",
+  Tutorial: "Tutorial",
+}
+
 // Action Key Binds
 const Actions = {
   MoveUp:    "ArrowUp",
   MoveDown:  "ArrowDown",
   MoveLeft:  "ArrowLeft",
   MoveRight: "ArrowRight",
+  Enter:     "Enter",
+  Escape:    "Escape",
 }
 
 // Interaction Mode
@@ -150,124 +168,6 @@ function matchTileColor(tile) {
   }
 }
 
-// Player Data
-// Player is an entity
-// Every entity has an id, position, tile, and collision flag
-const player = {
-  id: 1,
-  position: {x: 0, y: 0},
-  tile: Tiles.Player,
-  collision: true,
-  visible: true,
-  name: "",
-  ancestry: Ancestries.Human,
-  class: Classes.Fighter,
-  alignment: 0, // -5 to 5 (Chaos, Law)
-  level: 1,
-  experience: 0,
-  gold: 0,
-  weight: 0, // in gold coins
-  inventory: [],
-  equipment: [],
-  speed: 24, // squares per turn (10 in-game minutes)
-  stats: {
-      str: 0,
-      dex: 0,
-      con: 0,
-      int: 0,
-      wis: 0,
-      cha: 0,
-      maxStr: 0,
-      maxDex: 0,
-      maxCon: 0,
-      maxInt: 0,
-      maxWis: 0,
-      maxCha: 0,
-    },
-  saves: {
-      death: 0,
-      wands: 0,
-      paralysis: 0,
-      breath: 0,
-      spells: 0,
-    },
-  hitPoints: 0,
-  maxHitPoints: 0,
-  armorClass: 0,
-  maxArmorClass: 0,
-  attack: 0, // 20 - THAC0
-}
-
-// Bob is a prototypical NPC
-const bob = {
-  id: 0,
-  position: {x: 0, y: 0},
-  tile: Tiles.Merchant,
-  collision: true,
-  visible: true,
-  name: "Bob",
-  type: "Normal Human",
-  description: "A bald man with a noticable underbite.",
-  isPerson: true,
-  morale: 7,
-  alignment: 0, // -5 to 5 (Chaos, Law)
-  level: 0,
-  experience: 0,
-  gold: 10,
-  inventory: [],
-  speed: 24, // squares per turn (10 in-game minutes)
-  saves: {
-      death: 14,
-      wands: 15,
-      paralysis: 16,
-      breath: 17,
-      spells: 18,
-    },
-  immunity: {
-      acid: 0,
-      cold: 0,
-      electric: 0,
-      fire: 0,
-      mundane: 0,
-      poison: 0,
-      sleep: 0,
-      petrification: 0,
-    },
-  hitPoints: 1,
-  maxHitPoints: 1,
-  armorClass: 9,
-  maxArmorClass: 9,
-  attack: 0, // 20 - THAC0
-}
-
-// Example of a grid square object
-// const square = {
-//   tile: Tiles.Wall,
-//   collision: true,
-//   visible: true,
-//   entity_id: 0,
-// }
-
-// Camera determines the zoom level and position of the camera.
-// Always draws an N x N grid.
-const camera = {
-  position: {x: 0, y: 0},
-  resolution: gridResolution, // 1 tile = 24 Pixels
-  moveBuffer: 4, // Tile radius around camera before automatic movement.
-}
-
-// World is a collection of game data for the entire world
-const world = {
-  grid: [],     // Array of Square objects
-  entities: [], // Array of Entity objects (player, monsters, doors, etc.)
-  events: [],   // Array of Event signals
-  camera: camera,
-  renderer: RenderingMode.Ascii,
-  width: 0,
-  height: 0,
-  turns: 0,
-  debug: debug,
-}
 
 // Returns a monsters attack bonus based on their level
 function monsterAttackBonus(level) {
@@ -442,6 +342,41 @@ function clearText() {
   text.innerHTML = "";
 }
 
+// Title screen
+function drawMainMenu(img, ctx, world) {
+  const frameWidth = 4;
+  const xShift = 325;
+  const yShift = 128;
+  const optionXShift = 350; 
+  const optionOffset = 100; 
+  const highlightColor = "white";
+
+  // Draw Background
+  ctx.fillStyle = Colors.Brown;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  ctx.drawImage(img, frameWidth, frameWidth, canvasWidth - 2 * frameWidth, canvasHeight - 2 * frameWidth);
+
+  // Draw Title Text
+  ctx.font = "small-caps bold 64px cursive";
+  ctx.fillStyle = "#101010";
+  ctx.strokeStyle = Colors.Orange;
+  ctx.fillText("Rogue JS", xShift, yShift);
+  ctx.strokeText("Rogue JS", xShift, yShift);
+
+  // Draw Options and selection highlight
+  ctx.font = "small-caps bold 48px cursive";
+
+  for (var i = 0; i < world.optionList.length; i++) {
+    if (world.optionList[world.selection] === world.optionList[i]) {
+      ctx.fillStyle = highlightColor;
+    } else {
+      ctx.fillStyle = "#101010";
+    }
+    ctx.fillText(world.optionList[i], optionXShift, yShift + optionOffset * (i + 1));
+    ctx.strokeText(world.optionList[i], optionXShift, yShift + optionOffset * (i + 1));
+  }
+}
+
 // Sidebar window
 function drawSideBar(ctx, x, y) {
   const frameWidth = 4;
@@ -465,6 +400,10 @@ function drawGrid(ctx, world) {
     default:
       renderAscii(ctx, world);
   }
+}
+
+function clearCanvas(ctx) {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 }
 
 function clearGrid(ctx) {
@@ -617,8 +556,53 @@ function moveEntity(entity_id, dir, world) {
   return true;
 }
 
-// Event Listener
-function waitingKeypress(world) {
+// When an option is entered, this function will handle the state changes
+function handleSelectOption(world) {
+  switch(world.optionList[world.selection]) {
+    case MainMenuOptions.Continue:
+      console.log("Continue");
+      break;
+    case MainMenuOptions.NewGame:
+      console.log("NewGame");
+      break;
+    case MainMenuOptions.Tutorial:
+      console.log("Tutorial");
+      break;
+  }
+}
+
+// Event Listener for controlling menu input
+function menuInput(world) {
+  return new Promise((resolve) => {
+    document.addEventListener('keydown', onKeyHandler);
+    function onKeyHandler(e) {
+      var keyDetected = false;
+
+      switch (e.key) {
+        case Actions.MoveUp:
+          keyDetected = true;
+          world.selection = (world.selection + world.optionList.length - 1) % world.optionList.length;
+          break;
+        case Actions.MoveDown:
+          keyDetected = true;
+          world.selection = (world.selection + 1) % world.optionList.length;
+          break;
+        case Actions.Enter:
+          keyDetected = true;
+          handleSelectOption(world);
+          break;
+      }
+
+      if (keyDetected) {
+        document.removeEventListener('keydown', onKeyHandler);
+        resolve();
+      }
+    }
+  });
+}
+
+// Event Listener for controlling player input
+function playerInput(world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
@@ -632,7 +616,6 @@ function waitingKeypress(world) {
         case Actions.MoveDown:
           keyDetected = true;
           moveEntity(1, Directions.Down, world);
-          moveEntity(2, Directions.Down, world);
           break;
         case Actions.MoveLeft:
           keyDetected = true;
@@ -670,13 +653,34 @@ function handleEvents(ctx, world) {
 
 // Game Loop
 async function runGame(ctx, world) {
+  if (world.playerHasCharacter) {
+    world.optionList.push(MainMenuOptions.Continue);
+  }
+  world.optionList.push(MainMenuOptions.NewGame);
+  world.optionList.push(MainMenuOptions.Tutorial);
+
   while (true) {
-    await waitingKeypress(world);
-    handleEvents(ctx, world);
+    switch(world.state) {
+      case WorldState.MainMenu:
+        drawMainMenu(bgArt, ctx, world);
+        await menuInput(world);
+        clearCanvas(ctx);
+        break;
+
+      case WorldState.Dungeon:
+      case WorldState.Dungeon:
+        await playerInput(world);
+        handleEvents(ctx, world);
+        break;
+
+      default:
+        break;
+    }
   }
 }
 
-function initializeWorld(ctx, world) {
+function initializeTutorial(ctx, world) {
+  world.state = WorldState.Loading;
   const testMap =
     "#####################\n" + 
     "#...................#\n" +
@@ -714,10 +718,134 @@ function initializeWorld(ctx, world) {
     drawDebugGrid(ctx, world);
     drawDebugStaticZone(ctx, world);
   }
+
+  world.state = WorldState.Town;
+}
+
+// Player Data
+// Player is an entity
+// Every entity has an id, position, tile, and collision flag
+const player = {
+  id: 1,
+  position: {x: 0, y: 0},
+  tile: Tiles.Player,
+  collision: true,
+  visible: true,
+  name: "",
+  ancestry: Ancestries.Human,
+  class: Classes.Fighter,
+  alignment: 0, // -5 to 5 (Chaos, Law)
+  level: 1,
+  experience: 0,
+  gold: 0,
+  weight: 0, // in gold coins
+  inventory: [],
+  equipment: [],
+  speed: 24, // squares per turn (10 in-game minutes)
+  stats: {
+      str: 0,
+      dex: 0,
+      con: 0,
+      int: 0,
+      wis: 0,
+      cha: 0,
+      maxStr: 0,
+      maxDex: 0,
+      maxCon: 0,
+      maxInt: 0,
+      maxWis: 0,
+      maxCha: 0,
+    },
+  saves: {
+      death: 0,
+      wands: 0,
+      paralysis: 0,
+      breath: 0,
+      spells: 0,
+    },
+  hitPoints: 0,
+  maxHitPoints: 0,
+  armorClass: 0,
+  maxArmorClass: 0,
+  attack: 0, // 20 - THAC0
+}
+
+// Bob is a prototypical NPC
+const bob = {
+  id: 0,
+  position: {x: 0, y: 0},
+  tile: Tiles.Merchant,
+  collision: true,
+  visible: true,
+  name: "Bob",
+  type: "Normal Human",
+  description: "A bald man with a noticable underbite.",
+  isPerson: true,
+  morale: 7,
+  alignment: 0, // -5 to 5 (Chaos, Law)
+  level: 0,
+  experience: 0,
+  gold: 10,
+  inventory: [],
+  speed: 24, // squares per turn (10 in-game minutes)
+  saves: {
+      death: 14,
+      wands: 15,
+      paralysis: 16,
+      breath: 17,
+      spells: 18,
+    },
+  immunity: {
+      acid: 0,
+      cold: 0,
+      electric: 0,
+      fire: 0,
+      mundane: 0,
+      poison: 0,
+      sleep: 0,
+      petrification: 0,
+    },
+  hitPoints: 1,
+  maxHitPoints: 1,
+  armorClass: 9,
+  maxArmorClass: 9,
+  attack: 0, // 20 - THAC0
+}
+
+// Example of a grid square object
+// const square = {
+//   tile: Tiles.Wall,
+//   collision: true,
+//   visible: true,
+//   entity_id: 0,
+// }
+
+// Camera determines the zoom level and position of the camera.
+// Always draws an N x N grid.
+const camera = {
+  position: {x: 0, y: 0},
+  resolution: gridResolution, // 1 tile = 24 Pixels
+  moveBuffer: 4, // Tile radius around camera before automatic movement.
+}
+
+// World is a collection of game data for the entire world
+const world = {
+  grid: [],     // Array of Square objects
+  entities: [], // Array of Entity objects (player, monsters, doors, etc.)
+  events: [],   // Array of Event signals
+  camera: camera,
+  renderer: RenderingMode.Ascii,
+  width: 0,
+  height: 0,
+  turns: 0,
+  state: WorldState.MainMenu,
+  optionList: [],
+  selection: 0,
+  playerHasCharacter: false,
+  debug: debug,
 }
 
 // GAME
 // If character exists in localStorage -> Load character and continue
 // else -> run character creation and initialize a new world
-initializeWorld(ctx, world);
 runGame(ctx, world);
