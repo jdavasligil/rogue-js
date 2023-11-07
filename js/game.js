@@ -48,7 +48,7 @@ const Actions = {
 // Interaction Mode
 // Changes how the player interacts with the environment through movement
 const InteractMode = {
-  Interact: 0, // Open door, initiate trade
+  Normal: 0, // Open door, initiate trade
   Combat:   1, // Attack, break object / door
   Social:   2, // Attempt to initiate dialogue
   Stealth:  3, // Pick lock, pick pockets, steal
@@ -523,7 +523,8 @@ function renderAscii(ctx, world) {
   const center = Math.floor(canvasGrids / 2);
   const res = world.camera.resolution;
 
-  ctx.font = "24px sans-serif";
+  //ctx.font = "24px sans-serif";
+  ctx.font = "24px serif";
   ctx.fillStyle = Colors.White;
 
   var rowOffset = 0;
@@ -658,10 +659,8 @@ function handleEvents(ctx, world) {
     switch (e) {
       case Events.entityMoved:
         if (gridDrawn) {
-          console.log("Grid already Drawn");
           break;
         }
-        console.log("Performing Redraw!");
         clearGrid(ctx);
         drawGrid(ctx, world);
         if (world.debug) {
