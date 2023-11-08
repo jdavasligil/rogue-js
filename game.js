@@ -10,6 +10,7 @@
 "use strict";
 
 import { mulberry32 } from "./lib/fast-random.js";
+import { getJSON } from "./lib/serde.js";
 
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
@@ -22,22 +23,19 @@ const sideWidth = Math.floor((canvas.width - canvas.height) / 2);
 const gridResolution = 24;
 const canvasGrids = Math.floor(canvas.height / gridResolution);
 
+// A fixed seed is useful for recreating random state.
 const seed = 12345;
+
+// Enable this to turn on debug mode.
 const debug = false;
 
 // Random Number Generator
-const rng = mulberry32(seed);
+const mrng = mulberry32(seed);
 
-function roll(n,m) {
-  var total = 0;
-  for (let i = 0; i < n; i++) {
-    total += Math.round(1 + rng() * (m - 1));
-  }
-
-  return total;
-}
-
-// Event Signals
+/**
+ * Enumeration of all event signals. This includes FSM transitions.
+ * @enum {number}
+ */
 const Events = {
   playerMoved:   0,
   enterMainMenu: 1,
@@ -47,22 +45,31 @@ const Events = {
 }
 
 
-// Possible game states
+/**
+ * Enumeration of all game states.
+ * @enum {number}
+ */
 const WorldState = {
   MainMenu: 0,
   Creation: 1,
   Loading:  2,
-  Town:     3,
-  Dungeon:  4,
+  Running:  3,
 }
 
+/**
+ * Enumeration of all options in the main menu.
+ * @enum {string}
+ */
 const MainMenuOptions = {
   Continue: "Continue",
   NewGame:  "New Game",
   Tutorial: "Tutorial",
 }
 
-// Action Key Binds
+/**
+ * Enumeration of all possible game action keybinds.
+ * @enum {string}
+ */
 const Actions = {
   MoveUp:    "ArrowUp",
   MoveDown:  "ArrowDown",
@@ -72,16 +79,27 @@ const Actions = {
   Escape:    "Escape",
 }
 
-// Interaction Mode
-// Changes how the player interacts with the environment through movement
+/**
+ * Enumeration of all possible interaction modes.
+ *
+ * Normal - Open door, initiate trade.
+ * Combat - Attack target, break object.
+ * Social - Attempt to initiate dialogue.
+ * Stealth - Pick lock, pick pocket, steal, sneak.
+ * @readonly 
+ * @enum {number}
+ */
 const InteractMode = {
-  Normal:   0, // Open door, initiate trade
-  Combat:   1, // Attack, break object / door
-  Social:   2, // Attempt to initiate dialogue
-  Stealth:  3, // Pick lock, pick pockets, steal
+  Normal:   0, 
+  Combat:   1,
+  Social:   2,
+  Stealth:  3, 
 }
 
-// Directions
+/**
+ * Enumeration of all movement directions.
+ * @enum {{x: number, y: number}}
+ */
 const Directions = {
   Up:    {x: 0, y:-1},
   Down:  {x: 0, y: 1},
@@ -89,7 +107,12 @@ const Directions = {
   Right: {x: 1, y: 0},
 }
 
-// Types of map tiles.
+/**
+ * Enumeration of all map tiles including terrain and entities.
+ * Tiles are represented as ASCII characters.
+ * @readonly
+ * @enum {string}
+ */
 const Tiles = {
   Floor:      ".",
   Wall:       "#",
@@ -101,7 +124,11 @@ const Tiles = {
   Merchant:   "m",
 }
 
-// Color Palette
+/**
+ * Enumeration of custom color palette colors.
+ * @readonly
+ * @enum {string}
+ */
 const Colors = {
   White:      "#E1D9D1",
   Slate:      "#3C3A2D",
@@ -110,11 +137,6 @@ const Colors = {
   Orange:     "#EFBC74",
   DarkOrange: "#c4761b",
   MagicBlue:  "#0784b5",
-}
-
-async function getJSON(url) {
-  const response = await fetch(url);
-  return await response.json();
 }
 
 // Load ancestries and classes from data
@@ -646,7 +668,7 @@ function handleEvents(ctx, world) {
       case Events.enterTutorial:
         world.state = WorldState.Loading;
         initializeTutorial(ctx, world);
-        world.state = WorldState.Town;
+        world.state = WorldState.Running;
         break;
     }
   }
@@ -677,8 +699,7 @@ async function runGame(ctx, world) {
         clearCanvas(ctx);
         break;
 
-      case WorldState.Town:
-      case WorldState.Dungeon:
+      case WorldState.Running:
         await playerInput(world);
         break;
 
