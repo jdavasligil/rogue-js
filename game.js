@@ -18,17 +18,14 @@ const bgArt = document.getElementById("bg-art");
 const ctx = canvas.getContext("2d");
 
 // Set tweakable constants
-const canvasWidth = 896;
-const canvasHeight = 504;
-const sideWidth = Math.floor((canvasWidth - canvasHeight) / 2); // 196
-
+const sideWidth = Math.floor((canvas.width - canvas.height) / 2);
 const gridResolution = 24;
-const canvasGrids = Math.floor(canvasHeight / gridResolution);
+const canvasGrids = Math.floor(canvas.height / gridResolution);
 
 const seed = 12345;
 const debug = false;
 
-// RNG
+// Random Number Generator
 const rng = mulberry32(seed);
 
 function roll(n,m) {
@@ -78,7 +75,7 @@ const Actions = {
 // Interaction Mode
 // Changes how the player interacts with the environment through movement
 const InteractMode = {
-  Normal: 0, // Open door, initiate trade
+  Normal:   0, // Open door, initiate trade
   Combat:   1, // Attack, break object / door
   Social:   2, // Attempt to initiate dialogue
   Stealth:  3, // Pick lock, pick pockets, steal
@@ -115,36 +112,14 @@ const Colors = {
   MagicBlue:  "#0784b5",
 }
 
-// Ancestries
-const Ancestries = {
-  Drow: "Drow",
-  Duergar: "Duergar",
-  Dwarf: "Dwarf",
-  Elf: "Elf",
-  Gnome: "Gnome",
-  HalfElf: "Half-elf",
-  HalfOrc: "Half-orc",
-  Human: "Human",
-  Svirfneblin: "Svirfneblin",
+async function getJSON(url) {
+  const response = await fetch(url);
+  return await response.json();
 }
 
-// Classes
-const Classes = {
-  Acrobat: "Acrobat",
-  Assassin: "Assassin",
-  Bard: "Bard",
-  Thief: "Thief",
-  Barbarian: "Barbarian",
-  Cleric: "Cleric",
-  Druid: "Druid",
-  Fighter: "Fighter",
-  Illusionist: "Illusionist",
-  Knight: "Knight",
-  MagicUser: "Magic-User",
-  Paladin: "Paladin",
-  Ranger: "Ranger",
-  Thief: "Thief",
-}
+// Load ancestries and classes from data
+const Ancestries = await getJSON("./data/ancestries.json");
+const Classes = await getJSON("./data/classes.json");
 
 const RenderingMode = {
   Ascii: 0,
@@ -362,8 +337,8 @@ function drawMainMenu(img, ctx, world) {
 
   // Draw Background
   ctx.fillStyle = Colors.Brown;
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  ctx.drawImage(img, frameWidth, frameWidth, canvasWidth - 2 * frameWidth, canvasHeight - 2 * frameWidth);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, frameWidth, frameWidth, canvas.width - 2 * frameWidth, canvas.height - 2 * frameWidth);
 
   // Draw Title Text
   ctx.font = "small-caps bold 64px cursive";
@@ -391,10 +366,10 @@ function drawSideBar(ctx, x, y) {
   const frameWidth = 4;
   ctx.fillStyle = Colors.Brown;
   ctx.strokeStyle = Colors.DarkBrown;
-  ctx.fillRect(x, y, sideWidth, canvasHeight);
-  ctx.strokeRect(x, y, sideWidth, canvasHeight);
+  ctx.fillRect(x, y, sideWidth, canvas.height);
+  ctx.strokeRect(x, y, sideWidth, canvas.height);
   ctx.fillStyle = Colors.DarkBrown;
-  ctx.fillRect(x + frameWidth, y + frameWidth, sideWidth - frameWidth * 2, canvasHeight - frameWidth * 2);
+  ctx.fillRect(x + frameWidth, y + frameWidth, sideWidth - frameWidth * 2, canvas.height - frameWidth * 2);
 }
 
 // Game Window
@@ -412,11 +387,11 @@ function drawGrid(ctx, world) {
 }
 
 function clearCanvas(ctx) {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function clearGrid(ctx) {
-  ctx.clearRect(sideWidth, 0, canvasWidth - sideWidth * 2, canvasHeight);
+  ctx.clearRect(sideWidth, 0, canvas.width - sideWidth * 2, canvas.height);
 }
 
 function drawDebugGrid(ctx, world) {
@@ -428,13 +403,13 @@ function drawDebugGrid(ctx, world) {
     // Row Line
     ctx.beginPath();
     ctx.moveTo(sideWidth, n * res);
-    ctx.lineTo(sideWidth + canvasHeight, n * res);
+    ctx.lineTo(sideWidth + canvas.height, n * res);
     ctx.stroke();
     ctx.closePath();
     // Col Line
     ctx.beginPath();
     ctx.moveTo(sideWidth + n * res, 0);
-    ctx.lineTo(sideWidth + n * res, canvasHeight);
+    ctx.lineTo(sideWidth + n * res, canvas.height);
     ctx.stroke();
     ctx.closePath();
   }
@@ -443,8 +418,8 @@ function drawDebugGrid(ctx, world) {
 function drawDebugStaticZone(ctx, world) {
   const res = world.camera.resolution;
   const zoneBuffer = world.camera.moveBuffer;
-  const halfWidth = canvasWidth / 2;
-  const halfHeight = canvasHeight / 2;
+  const halfWidth = canvas.width / 2;
+  const halfHeight = canvas.height / 2;
   const halfRes = res / 2;
   const leftBound = halfWidth - zoneBuffer * res - halfRes;
   const rightBound = halfWidth + zoneBuffer * res + halfRes;
@@ -745,7 +720,7 @@ function initializeTutorial(ctx, world) {
   world.camera.position = world.entities[player.id - 1].position;
 
   drawSideBar(ctx, 0, 0);
-  drawSideBar(ctx, canvasWidth - sideWidth, 0);
+  drawSideBar(ctx, canvas.width - sideWidth, 0);
   drawGrid(ctx, world);
   if (world.debug) {
     drawDebugGrid(ctx, world);
