@@ -347,8 +347,9 @@ function drawMainMenu(img, ctx, world) {
   const frameWidth = 4;
   const xShift = 325;
   const yShift = 128;
-  const optionXShift = 350; 
-  const optionOffset = 100; 
+  const optionXShift = 364; 
+  const optionYShift = 160; 
+  const optionOffset = 64; 
   const highlightColor = "white";
 
   // Draw Background
@@ -364,7 +365,7 @@ function drawMainMenu(img, ctx, world) {
   ctx.strokeText("Rogue JS", xShift, yShift);
 
   // Draw Options and selection highlight
-  ctx.font = "small-caps bold 48px cursive";
+  ctx.font = "small-caps bold 36px cursive";
 
   for (var i = 0; i < world.optionList.length; i++) {
     if (world.optionList[world.selection] === world.optionList[i]) {
@@ -372,8 +373,8 @@ function drawMainMenu(img, ctx, world) {
     } else {
       ctx.fillStyle = "#101010";
     }
-    ctx.fillText(world.optionList[i], optionXShift, yShift + optionOffset * (i + 1));
-    ctx.strokeText(world.optionList[i], optionXShift, yShift + optionOffset * (i + 1));
+    ctx.fillText(world.optionList[i], optionXShift, optionYShift + optionOffset * (i + 1));
+    ctx.strokeText(world.optionList[i], optionXShift, optionYShift + optionOffset * (i + 1));
   }
 }
 
@@ -841,7 +842,7 @@ const world = {
   state: WorldState.MainMenu,
   optionList: [],
   selection: 0,
-  playerHasCharacter: false,
+  playerHasCharacter: true,
   debug: debug,
 }
 
