@@ -94,12 +94,13 @@ const Tiles = {
 
 // Color Palette
 const Colors = {
-  White:     "#E1D9D1",
-  Slate:     "#3C3A2D",
-  Brown:     "#684E11",
-  DarkBrown: "#151004",
-  Orange:    "#EFBC74",
-  MagicBlue: "#0784b5",
+  White:      "#E1D9D1",
+  Slate:      "#3C3A2D",
+  Brown:      "#684E11",
+  DarkBrown:  "#151004",
+  Orange:     "#EFBC74",
+  DarkOrange: "#c4761b",
+  MagicBlue:  "#0784b5",
 }
 
 // Event Signals
@@ -350,7 +351,7 @@ function drawMainMenu(img, ctx, world) {
   const optionXShift = 364; 
   const optionYShift = 160; 
   const optionOffset = 64; 
-  const highlightColor = "white";
+  const highlightColor = Colors.DarkOrange;
 
   // Draw Background
   ctx.fillStyle = Colors.Brown;
