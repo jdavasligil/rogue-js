@@ -9,6 +9,8 @@
 
 "use strict";
 
+import { mulberry32 } from "./lib/fast-random.js";
+
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
 const text = document.getElementById("game-text");
