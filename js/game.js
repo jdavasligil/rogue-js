@@ -24,7 +24,7 @@ const gridResolution = 24;
 const canvasGrids = Math.floor(canvasHeight / gridResolution);
 
 const seed = 12345;
-const debug = true;
+const debug = false;
 
 // RNG
 const rng = mulberry32(seed);
@@ -37,6 +37,16 @@ function roll(n,m) {
 
   return total;
 }
+
+// Event Signals
+const Events = {
+  playerMoved:   0,
+  enterMainMenu: 1,
+  exitMainMenu:  2,
+  enterTutorial: 3,
+  exitTutorial:  4,
+}
+
 
 // Possible game states
 const WorldState = {
@@ -101,11 +111,6 @@ const Colors = {
   Orange:     "#EFBC74",
   DarkOrange: "#c4761b",
   MagicBlue:  "#0784b5",
-}
-
-// Event Signals
-const Events = {
-  playerMoved: 0,
 }
 
 // Ancestries
@@ -501,10 +506,12 @@ function renderTiles(ctx, world) {
 }
 
 // Handle camera movement
-function moveCamera(dir, world) {
+function moveCamera(world) {
   const buffer = world.camera.moveBuffer;
   const dx = Math.abs(world.entities[0].position.x - world.camera.position.x);
   const dy = Math.abs(world.entities[0].position.y - world.camera.position.y);
+  const dir = world.entities[0].orientation;
+
   if (dx > buffer || dy > buffer) {
     world.camera.position.x += dir.x;
     world.camera.position.y += dir.y;
@@ -517,7 +524,6 @@ function moveCamera(dir, world) {
 function moveEntity(entity_id, dir, world) {
   const oldPosition = world.entities[entity_id - 1].position;
   const currSquare = world.grid[oldPosition.y * world.width + oldPosition.x];
-
   const newPosition = {
     x: oldPosition.x + dir.x,
     y: oldPosition.y + dir.y,
@@ -551,7 +557,7 @@ function moveEntity(entity_id, dir, world) {
 
   // If the entity is the player, handle camera movement
   if (entity_id === player.id) {
-    moveCamera(dir, world);
+    world.entities[0].orientation = dir;
     world.events.push(Events.playerMoved);
   }
 
@@ -568,7 +574,7 @@ function handleSelectOption(world) {
       console.log("NewGame");
       break;
     case MainMenuOptions.Tutorial:
-      console.log("Tutorial");
+      world.events.push(Events.enterTutorial);
       break;
   }
 }
@@ -591,6 +597,7 @@ function menuInput(world) {
           break;
         case Actions.Enter:
           keyDetected = true;
+          world.events.push(Events.exitMainMenu);
           handleSelectOption(world);
           break;
       }
@@ -637,11 +644,12 @@ function playerInput(world) {
   });
 }
 
+// Handle all event signals and state transitions here
 function handleEvents(ctx, world) {
-  var e = undefined;
-  while ((e = world.events.pop()) !== undefined) {
-    switch (e) {
+  for (var i = 0; i < world.events.length; i++) {
+    switch (world.events[i]) {
       case Events.playerMoved:
+        moveCamera(world);
         clearGrid(ctx);
         drawGrid(ctx, world);
         if (world.debug) {
@@ -649,19 +657,42 @@ function handleEvents(ctx, world) {
           drawDebugStaticZone(ctx, world);
         }
         break;
+
+      case Events.enterMainMenu:
+        world.state = WorldState.MainMenu;
+        world.selection = 0;
+        break;
+      case Events.exitMainMenu:
+        clearCanvas(ctx);
+        break;
+
+      case Events.enterTutorial:
+        world.state = WorldState.Loading;
+        initializeTutorial(ctx, world);
+        world.state = WorldState.Town;
+        break;
     }
   }
+  // Drain the event queue
+  // Prevents dangling pointer issues
+  while (world.events.pop());
 }
 
-// Game Loop
+// Core game: input is blocking
 async function runGame(ctx, world) {
   if (world.playerHasCharacter) {
     world.optionList.push(MainMenuOptions.Continue);
   }
   world.optionList.push(MainMenuOptions.NewGame);
   world.optionList.push(MainMenuOptions.Tutorial);
+  world.events.push(Events.enterMainMenu);
 
+  // Main Loop
   while (true) {
+
+    // Handle all events and state transitions
+    handleEvents(ctx, world);
+
     switch(world.state) {
       case WorldState.MainMenu:
         drawMainMenu(bgArt, ctx, world);
@@ -669,10 +700,9 @@ async function runGame(ctx, world) {
         clearCanvas(ctx);
         break;
 
-      case WorldState.Dungeon:
+      case WorldState.Town:
       case WorldState.Dungeon:
         await playerInput(world);
-        handleEvents(ctx, world);
         break;
 
       default:
@@ -682,7 +712,6 @@ async function runGame(ctx, world) {
 }
 
 function initializeTutorial(ctx, world) {
-  world.state = WorldState.Loading;
   const testMap =
     "#####################\n" + 
     "#...................#\n" +
@@ -720,8 +749,6 @@ function initializeTutorial(ctx, world) {
     drawDebugGrid(ctx, world);
     drawDebugStaticZone(ctx, world);
   }
-
-  world.state = WorldState.Town;
 }
 
 // Player Data
@@ -730,6 +757,7 @@ function initializeTutorial(ctx, world) {
 const player = {
   id: 1,
   position: {x: 0, y: 0},
+  orientation: Directions.Up,
   tile: Tiles.Player,
   collision: true,
   visible: true,
