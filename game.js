@@ -9,6 +9,7 @@
 
 "use strict";
 
+import { parseRoll } from "./lib/dice.js";
 import { mulberry32 } from "./lib/fast-random.js";
 import { getJSON } from "./lib/serde.js";
 
@@ -30,7 +31,11 @@ const seed = 12345;
 const debug = false;
 
 // Random Number Generator
-const mrng = mulberry32(seed);
+const rng = mulberry32(seed);
+const rng2 = mulberry32(seed);
+console.log(parseRoll(rng, "2*d6!"));
+console.log(parseRoll(rng, "1d6!"));
+console.log(parseRoll(rng2, "2d6kh!"));
 
 /**
  * Enumeration of all event signals. This includes FSM transitions.
@@ -300,7 +305,7 @@ function monsterSavingThrows(level) {
 // Map Generation
 function stringToGrid(s, world) {
   world.grid = [];
-  var widthObtained = 0;
+  let widthObtained = 0;
   for (let i = 0; i < s.length; i++) {
     if (s[i] !== '\n') {
       world.grid.push(
@@ -372,7 +377,7 @@ function drawMainMenu(img, ctx, world) {
   // Draw Options and selection highlight
   ctx.font = "small-caps bold 36px cursive";
 
-  for (var i = 0; i < world.optionList.length; i++) {
+  for (let i = 0; i < world.optionList.length; i++) {
     if (world.optionList[world.selection] === world.optionList[i]) {
       ctx.fillStyle = highlightColor;
     } else {
@@ -421,7 +426,7 @@ function drawDebugGrid(ctx, world) {
 
   ctx.strokeStyle = "green";
 
-  for (var n = 0; n < 22; n++) {
+  for (let n = 0; n < 22; n++) {
     // Row Line
     ctx.beginPath();
     ctx.moveTo(sideWidth, n * res);
@@ -472,13 +477,13 @@ function renderAscii(ctx, world) {
   ctx.font = "24px serif";
   ctx.fillStyle = Colors.White;
 
-  var rowOffset = 0;
-  var colOffset = 0;
-  var square = null;
+  let rowOffset = 0;
+  let colOffset = 0;
+  let square = null;
 
   // Draw Map Tiles
-  for (var row = 0; row < canvasGrids; row++) {
-    for (var col = 0; col < canvasGrids; col++) {
+  for (let row = 0; row < canvasGrids; row++) {
+    for (let col = 0; col < canvasGrids; col++) {
       rowOffset = world.camera.position.y - center + row;
       colOffset = world.camera.position.x - center + col;
       if (0 <= rowOffset
@@ -583,7 +588,7 @@ function menuInput(world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
-      var keyDetected = false;
+      let keyDetected = false;
 
       switch (e.key) {
         case Actions.MoveUp:
@@ -614,7 +619,7 @@ function playerInput(world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
-      var keyDetected = false;
+      let keyDetected = false;
 
       switch (e.key) {
         case Actions.MoveUp:
@@ -645,7 +650,7 @@ function playerInput(world) {
 
 // Handle all event signals and state transitions here
 function handleEvents(ctx, world) {
-  for (var i = 0; i < world.events.length; i++) {
+  for (let i = 0; i < world.events.length; i++) {
     switch (world.events[i]) {
       case Events.playerMoved:
         moveCamera(world);
