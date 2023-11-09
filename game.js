@@ -33,9 +33,9 @@ const debug = false;
 // Random Number Generator
 const rng = mulberry32(seed);
 const rng2 = mulberry32(seed);
-console.log(parseRoll(rng, "2*d6!"));
-console.log(parseRoll(rng, "1d6!"));
-console.log(parseRoll(rng2, "2d6kh!"));
+console.log(parseRoll(rng, "1d4 + 2d6 * 2"));
+console.log(parseRoll(rng, "1d4"));
+console.log(parseRoll(rng2, "2d4kl"));
 
 /**
  * Enumeration of all event signals. This includes FSM transitions.
