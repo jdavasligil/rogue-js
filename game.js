@@ -23,9 +23,8 @@ const ctx = canvas.getContext("2d");
 
 // Set tweakable constants
 const sideWidth = Math.floor((canvas.width - canvas.height) / 2);
-const gridResolution = 24;
+const gridResolution = 18; // 18, 24, 32
 const canvasGrids = Math.floor(canvas.height / gridResolution);
-const chunkWidth = 32;
 
 // A fixed seed is useful for recreating random state.
 const seed = 12345;
@@ -54,7 +53,6 @@ const Event = {
   enterTutorial: 3,
   exitTutorial:  4,
 }
-
 
 /**
  * Enumeration of all game states.
@@ -159,89 +157,6 @@ const RenderingMode = {
   Tile: 1,
 }
 
-/** Class representing an NxN grid of tiles. */
-class TileGrid {
-  /**
-   * Create a tile array.
-   * @param {number} width - The grid width N.
-   */
-  constructor(width) {
-    this.data = new Uint8Array(width * width);
-    this.width = width;
-  }
-
-  /**
-   * Get the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @returns {Tile} - The tile found or undefined.
-   */
-  getTile(position) {
-    return this.data[position.y * width + position.x];
-  }
-
-  /**
-   * Set the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @param {Tile} - The tile to set.
-   */
-  setTile(position, tile) {
-    this.data[position.y * width + position.x] = tile;
-  }
-
-  /**
-   * Replace the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @param {Tile} - The replacement tile.
-   * @returns {Tile} - The tile being replaced.
-   */
-  replaceTile(position, tile) {
-    let tileReplaced = this.data[position.y * width + position.x];
-    this.data[position.y * width + position.x] = tile;
-    return tileReplaced;
-  }
-}
-
-/** Class representing a grid of bits. */
-class BitGrid {
-  /**
-   * Create a bit array.
-   * @param {number} width - The grid width.
-   */
-  constructor(width) {
-    this.data = new Uint8Array(width * width / 8);
-    this.width = width;
-  }
-
-  /**
-   * Get the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @returns {Tile} - The tile found or undefined.
-   */
-  getTile(position) {
-    return this.data[position.y * width + position.x];
-  }
-
-  /**
-   * Set the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @param {Tile} - The tile to set.
-   */
-  setTile(position, tile) {
-    this.data[position.y * width + position.x] = tile;
-  }
-
-  /**
-   * Replace the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @param {Tile} - The replacement tile.
-   * @returns {Tile} - The tile being replaced.
-   */
-  replaceTile(position, tile) {
-    let tileReplaced = this.data[position.y * width + position.x];
-    this.data[position.y * width + position.x] = tile;
-    return tileReplaced;
-  }
-}
 
 // Load ancestries and classes from data
 //const Ancestries = await getJSON("./data/ancestries.json");
@@ -263,7 +178,7 @@ class BitGrid {
  * @param {number} deadZone - Distance moved from center before camera moves.
  * @returns {Camera}
  */
-function newCamera(position={x: 0, y: 0}, resolution=24, deadZone=4) {
+function newCamera(position={x: 0, y: 0}, resolution=gridResolution, deadZone=4) {
   return {
     position: position,
     resolution: resolution,
@@ -272,14 +187,70 @@ function newCamera(position={x: 0, y: 0}, resolution=24, deadZone=4) {
 }
 
 /**
+ * A Chunk is a 16x16 sub-array of the world map used for data streaming.
+ * @typedef Chunk
+ * @type {object}
+ * @property {Position} position - World position of the chunk.
+ * @property {TileGrid} tileGrid - Tile grid.
+ * @property {BitGrid} visGrid - Visibility grid.
+ * @property {BitGrid} colGrid - Collision grid.
+ * @property {IDGrid} entGrid - Entity ID grid.
+ */
+
+/**
+ * Constructor for Chunk.
+ * @param {Position} position - The world position of the chunk.
+ * @returns {Chunk}
+ */
+function newChunk(position) {
+  return {
+    position: position,
+    tileGrid: new TileGrid(16),
+    visGrid:  new BitGrid(16),
+    colGrid:  new BitGrid(16),
+    entGrid:  new IDGrid(16),
+  };
+}
+
+/**
+ * The ChunkMap stores references to 9 16x16 chunks in memory at a time.
+ * @typedef ChunkMap
+ * @type {object}
+ * @property {Chunk} root - The central chunk.
+ * @property {Chunk} N - The northern chunk.
+ * @property {Chunk} NE - The northeastern chunk.
+ * @property {Chunk} E - The eastern chunk.
+ * @property {Chunk} SE - The southeastern chunk.
+ * @property {Chunk} S - The southern chunk.
+ * @property {Chunk} SW - The southwestern chunk.
+ * @property {Chunk} W - The western chunk.
+ * @property {Chunk} NW - The northwestern chunk.
+ */
+
+/**
+ * Constructor for ChunkMap.
+ * @returns {ChunkMap}
+ */
+function newChunkMap() {
+  return {
+    root: newChunk({x:   0, y:   0}),
+    N:    newChunk({x:   0, y: -16}),
+    NE:   newChunk({x:  16, y: -16}),
+    E:    newChunk({x:  16, y:   0}),
+    SE:   newChunk({x:  16, y:  16}),
+    S:    newChunk({x:   0, y:  16}),
+    SW:   newChunk({x: -16, y:  16}),
+    W:    newChunk({x: -16, y:   0}),
+    NW:   newChunk({x: -16, y: -16}),
+  };
+}
+
+/**
  * The world holds all game state.
  * @typedef World
  * @type {object}
- * @property {Array.<Tile>} tileGrid - Tile grid.
- * @property {Array.<Boolean>} visGrid - Visibility grid.
- * @property {Array.<Boolean>} colGrid - Collision grid.
- * @property {Array.<number>} entGrid - Entity ID grid.
- * @property {Array.<Entity>} entities - An array for entity data.
+ * @property {ChunkMap} chunks - An octree holding per-chunk data buffers.
+ * @property {Map.<number, object>} entities - A map to access entity data.
  * @property {Array.<Event>} events - An array for event signals for state change.
  * @property {Camera} camera - The top-down camera which renders the world.
  * @property {RenderingMode} renderer - How to draw the grid.
@@ -293,26 +264,26 @@ function newCamera(position={x: 0, y: 0}, resolution=24, deadZone=4) {
  * @property {boolean} debug - Activates debugging features.
  */
 
+/**
+ * Constructor for the world.
+ * @returns {World}
+ */
 function newWorld() {
   return {
-    tileGrid: new TileArray(chunkWidth),
-    visGrid: new Uint8Array(chunkWidth * chunkWidth / 8),
+    chunks: newChunkMap(),
+    entities: new Map(),
+    events: [],
+    camera: newCamera(),
+    renderer: RenderingMode.Ascii,
+    width: 0,
+    height: 0,
+    turns: 0,
+    state: GameState.Loading,
+    options: [],
+    selection: 0,
+    saveFileExists: false,
+    debug: false,
   };
-}
-const world = {
-  grid:    [],
-  entities: [],
-  events: [],
-  camera: newCamera(resolution=gridResolution),
-  renderer: RenderingMode.Ascii,
-  width: 0,
-  height: 0,
-  turns: 0,
-  state: GameState.MainMenu,
-  options: [],
-  selection: 0,
-  saveFileExists: true,
-  debug: debug,
 }
 
 // Takes in a tile (string) and returns a color (string)
@@ -339,7 +310,6 @@ function matchTileColor(tile) {
       return Color.Orange;
   }
 }
-
 
 // Returns a monsters attack bonus based on their level
 function monsterAttackBonus(level) {
@@ -860,6 +830,9 @@ function handleEvent(ctx, world) {
 
 // Core game: input is blocking
 async function runGame(ctx, world) {
+
+  const world = newWorld();
+
   if (world.saveFileExists) {
     world.options.push(MainMenuOption.Continue);
   }
@@ -1025,4 +998,5 @@ const bob = {
 // GAME
 // If character exists in localStorage -> Load character and continue
 // else -> run character creation and initialize a new world
-runGame(ctx, world);
+
+runGame(ctx);
