@@ -1,11 +1,6 @@
 /**
  * @fileoverview Copyright (c) 2023 Jaedin Davasligil
  *
- * To the extent possible under law, the author has dedicated all copyright
- * and related and neighboring rights to this software to the public domain
- * worldwide. This software is distributed without any warranty.
- * See <http://creativecommons.org/publicdomain/zero/1.0/>.
- *
  * Rogue-JS is a pure javascript browser dungeon crawler.
  * @package
  */
@@ -18,9 +13,7 @@
 
 "use strict";
 
-import { parseRoll } from "./lib/dice.js";
 import { mulberry32 } from "./lib/fast-random.js";
-import { getJSON } from "./lib/serde.js";
 
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
@@ -32,6 +25,7 @@ const ctx = canvas.getContext("2d");
 const sideWidth = Math.floor((canvas.width - canvas.height) / 2);
 const gridResolution = 24;
 const canvasGrids = Math.floor(canvas.height / gridResolution);
+const chunkWidth = 32;
 
 // A fixed seed is useful for recreating random state.
 const seed = 12345;
@@ -47,37 +41,6 @@ const rng = mulberry32(seed);
 /**
  * A position on an x-y cartesian coordinate grid.
  * @typedef {{x: number, y: number}} Position
- */
-
-/**
- * The in-game camera determines the zoom level and rendering position.
- * @typedef Camera
- * @type {object}
- * @property {Position} position - The world grid position of the camera.
- * @property {number} resolution - The pixel resolution of each tile.
- * @property {number} deadZone - Distance travelled before camera moves.
- */
-
-/**
- * The world holds all game state.
- * @typedef World
- * @type {object}
- * @property {Array.<Tile>} tileGrid - Tile grid.
- * @property {Array.<Boolean>} visGrid - Visibility grid.
- * @property {Array.<Boolean>} colGrid - Collision grid.
- * @property {Array.<number>} entGrid - Entity ID grid.
- * @property {Array.<Entity>} entities - An array for entity data.
- * @property {Array.<Event>} events - An array for event signals for state change.
- * @property {Camera} camera - The top-down camera which renders the world.
- * @property {RenderingMode} renderer - How to draw the grid.
- * @property {number} width - Width of the world map.
- * @property {number} height - Height of the world map.
- * @property {number} turns - How many turns have passed (1 turn = 10 min).
- * @property {GameState} state - What state the game is currently in.
- * @property {Array.<MainMenuOption>} options - Main menu options available.
- * @property {number} selection - Current option menu selection.
- * @property {boolean} saveFileExists - True when save loaded from local storage.
- * @property {boolean} debug - Activates debugging features.
  */
 
 /**
@@ -196,9 +159,102 @@ const RenderingMode = {
   Tile: 1,
 }
 
+/** Class representing an NxN grid of tiles. */
+class TileGrid {
+  /**
+   * Create a tile array.
+   * @param {number} width - The grid width N.
+   */
+  constructor(width) {
+    this.data = new Uint8Array(width * width);
+    this.width = width;
+  }
+
+  /**
+   * Get the tile at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @returns {Tile} - The tile found or undefined.
+   */
+  getTile(position) {
+    return this.data[position.y * width + position.x];
+  }
+
+  /**
+   * Set the tile at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @param {Tile} - The tile to set.
+   */
+  setTile(position, tile) {
+    this.data[position.y * width + position.x] = tile;
+  }
+
+  /**
+   * Replace the tile at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @param {Tile} - The replacement tile.
+   * @returns {Tile} - The tile being replaced.
+   */
+  replaceTile(position, tile) {
+    let tileReplaced = this.data[position.y * width + position.x];
+    this.data[position.y * width + position.x] = tile;
+    return tileReplaced;
+  }
+}
+
+/** Class representing a grid of bits. */
+class BitGrid {
+  /**
+   * Create a bit array.
+   * @param {number} width - The grid width.
+   */
+  constructor(width) {
+    this.data = new Uint8Array(width * width / 8);
+    this.width = width;
+  }
+
+  /**
+   * Get the tile at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @returns {Tile} - The tile found or undefined.
+   */
+  getTile(position) {
+    return this.data[position.y * width + position.x];
+  }
+
+  /**
+   * Set the tile at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @param {Tile} - The tile to set.
+   */
+  setTile(position, tile) {
+    this.data[position.y * width + position.x] = tile;
+  }
+
+  /**
+   * Replace the tile at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @param {Tile} - The replacement tile.
+   * @returns {Tile} - The tile being replaced.
+   */
+  replaceTile(position, tile) {
+    let tileReplaced = this.data[position.y * width + position.x];
+    this.data[position.y * width + position.x] = tile;
+    return tileReplaced;
+  }
+}
+
 // Load ancestries and classes from data
-const Ancestries = await getJSON("./data/ancestries.json");
-const Classes = await getJSON("./data/classes.json");
+//const Ancestries = await getJSON("./data/ancestries.json");
+//const Classes = await getJSON("./data/classes.json");
+
+/**
+ * The in-game camera determines the zoom level and rendering position.
+ * @typedef Camera
+ * @type {object}
+ * @property {Position} position - The world grid position of the camera.
+ * @property {number} resolution - The pixel resolution of each tile.
+ * @property {number} deadZone - Distance travelled before camera moves.
+ */
 
 /**
  * Constructor for Camera.
@@ -215,7 +271,34 @@ function newCamera(position={x: 0, y: 0}, resolution=24, deadZone=4) {
   };
 }
 
-// World is a collection of game data for the entire world
+/**
+ * The world holds all game state.
+ * @typedef World
+ * @type {object}
+ * @property {Array.<Tile>} tileGrid - Tile grid.
+ * @property {Array.<Boolean>} visGrid - Visibility grid.
+ * @property {Array.<Boolean>} colGrid - Collision grid.
+ * @property {Array.<number>} entGrid - Entity ID grid.
+ * @property {Array.<Entity>} entities - An array for entity data.
+ * @property {Array.<Event>} events - An array for event signals for state change.
+ * @property {Camera} camera - The top-down camera which renders the world.
+ * @property {RenderingMode} renderer - How to draw the grid.
+ * @property {number} width - Width of the world map.
+ * @property {number} height - Height of the world map.
+ * @property {number} turns - How many turns have passed (1 turn = 10 min).
+ * @property {GameState} state - What state the game is currently in.
+ * @property {Array.<MainMenuOption>} options - Main menu options available.
+ * @property {number} selection - Current option menu selection.
+ * @property {boolean} saveFileExists - True when save loaded from local storage.
+ * @property {boolean} debug - Activates debugging features.
+ */
+
+function newWorld() {
+  return {
+    tileGrid: new TileArray(chunkWidth),
+    visGrid: new Uint8Array(chunkWidth * chunkWidth / 8),
+  };
+}
 const world = {
   grid:    [],
   entities: [],
