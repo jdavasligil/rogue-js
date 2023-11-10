@@ -1,10 +1,19 @@
-// Copyright (c) 2023 Jaedin Davasligil
-//
-// Rogue-JS is a pure javascript browser Colors. crawler.
+/**
+ * @fileoverview Copyright (c) 2023 Jaedin Davasligil
+ *
+ * To the extent possible under law, the author has dedicated all copyright
+ * and related and neighboring rights to this software to the public domain
+ * worldwide. This software is distributed without any warranty.
+ * See <http://creativecommons.org/publicdomain/zero/1.0/>.
+ *
+ * Rogue-JS is a pure javascript browser dungeon crawler.
+ * @package
+ */
 
 // TODO
 // [ ] Character Creation
 // [ ] Level Generation
+// [ ] Combat
 // [ ] Serialization
 
 "use strict";
@@ -32,16 +41,50 @@ const debug = false;
 
 // Random Number Generator
 const rng = mulberry32(seed);
-const rng2 = mulberry32(seed);
-console.log(parseRoll(rng, "1d4 + 2d6 * 2"));
-console.log(parseRoll(rng, "1d4"));
-console.log(parseRoll(rng2, "2d4kl"));
+
+// TYPES
+
+/**
+ * A position on an x-y cartesian coordinate grid.
+ * @typedef {{x: number, y: number}} Position
+ */
+
+/**
+ * The in-game camera determines the zoom level and rendering position.
+ * @typedef Camera
+ * @type {object}
+ * @property {Position} position - The world grid position of the camera.
+ * @property {number} resolution - The pixel resolution of each tile.
+ * @property {number} deadZone - Distance travelled before camera moves.
+ */
+
+/**
+ * The world holds all game state.
+ * @typedef World
+ * @type {object}
+ * @property {Array.<Tile>} tileGrid - Tile grid.
+ * @property {Array.<Boolean>} visGrid - Visibility grid.
+ * @property {Array.<Boolean>} colGrid - Collision grid.
+ * @property {Array.<number>} entGrid - Entity ID grid.
+ * @property {Array.<Entity>} entities - An array for entity data.
+ * @property {Array.<Event>} events - An array for event signals for state change.
+ * @property {Camera} camera - The top-down camera which renders the world.
+ * @property {RenderingMode} renderer - How to draw the grid.
+ * @property {number} width - Width of the world map.
+ * @property {number} height - Height of the world map.
+ * @property {number} turns - How many turns have passed (1 turn = 10 min).
+ * @property {GameState} state - What state the game is currently in.
+ * @property {Array.<MainMenuOption>} options - Main menu options available.
+ * @property {number} selection - Current option menu selection.
+ * @property {boolean} saveFileExists - True when save loaded from local storage.
+ * @property {boolean} debug - Activates debugging features.
+ */
 
 /**
  * Enumeration of all event signals. This includes FSM transitions.
  * @enum {number}
  */
-const Events = {
+const Event = {
   playerMoved:   0,
   enterMainMenu: 1,
   exitMainMenu:  2,
@@ -54,7 +97,7 @@ const Events = {
  * Enumeration of all game states.
  * @enum {number}
  */
-const WorldState = {
+const GameState = {
   MainMenu: 0,
   Creation: 1,
   Loading:  2,
@@ -65,7 +108,7 @@ const WorldState = {
  * Enumeration of all options in the main menu.
  * @enum {string}
  */
-const MainMenuOptions = {
+const MainMenuOption = {
   Continue: "Continue",
   NewGame:  "New Game",
   Tutorial: "Tutorial",
@@ -75,7 +118,7 @@ const MainMenuOptions = {
  * Enumeration of all possible game action keybinds.
  * @enum {string}
  */
-const Actions = {
+const Action = {
   MoveUp:    "ArrowUp",
   MoveDown:  "ArrowDown",
   MoveLeft:  "ArrowLeft",
@@ -105,7 +148,7 @@ const InteractMode = {
  * Enumeration of all movement directions.
  * @enum {{x: number, y: number}}
  */
-const Directions = {
+const Direction = {
   Up:    {x: 0, y:-1},
   Down:  {x: 0, y: 1},
   Left:  {x:-1, y: 0},
@@ -114,19 +157,18 @@ const Directions = {
 
 /**
  * Enumeration of all map tiles including terrain and entities.
- * Tiles are represented as ASCII characters.
  * @readonly
- * @enum {string}
+ * @enum {number}
  */
-const Tiles = {
-  Floor:      ".",
-  Wall:       "#",
-  OpenDoor:   "'",
-  ClosedDoor: "+",
-  StairsUp:   "<",
-  StairsDown: ">",
-  Player:     "@",
-  Merchant:   "m",
+const Tile = {
+  Floor:      0,
+  Wall:       1,
+  OpenDoor:   2,
+  ClosedDoor: 3,
+  StairsUp:   4,
+  StairsDown: 5,
+  Player:     6,
+  Merchant:   7,
 }
 
 /**
@@ -134,7 +176,7 @@ const Tiles = {
  * @readonly
  * @enum {string}
  */
-const Colors = {
+const Color = {
   White:      "#E1D9D1",
   Slate:      "#3C3A2D",
   Brown:      "#684E11",
@@ -144,13 +186,50 @@ const Colors = {
   MagicBlue:  "#0784b5",
 }
 
+/**
+ * Enumeration of possible rendering modes.
+ * @readonly
+ * @enum {number}
+ */
+const RenderingMode = {
+  Ascii: 0,
+  Tile: 1,
+}
+
 // Load ancestries and classes from data
 const Ancestries = await getJSON("./data/ancestries.json");
 const Classes = await getJSON("./data/classes.json");
 
-const RenderingMode = {
-  Ascii: 0,
-  Tile: 1,
+/**
+ * Constructor for Camera.
+ * @param {Position} position - The world position of the camera.
+ * @param {number} resolution - Pixels per tile.
+ * @param {number} deadZone - Distance moved from center before camera moves.
+ * @returns {Camera}
+ */
+function newCamera(position={x: 0, y: 0}, resolution=24, deadZone=4) {
+  return {
+    position: position,
+    resolution: resolution,
+    deadZone: deadZone,
+  };
+}
+
+// World is a collection of game data for the entire world
+const world = {
+  grid:    [],
+  entities: [],
+  events: [],
+  camera: newCamera(resolution=gridResolution),
+  renderer: RenderingMode.Ascii,
+  width: 0,
+  height: 0,
+  turns: 0,
+  state: GameState.MainMenu,
+  options: [],
+  selection: 0,
+  saveFileExists: true,
+  debug: debug,
 }
 
 // Takes in a tile (string) and returns a color (string)
@@ -158,23 +237,23 @@ const RenderingMode = {
 // Can be overwritten by colors set by an entity
 function matchTileColor(tile) {
   switch(tile) {
-    case Tiles.Floor:
-      return Colors.Slate;
+    case Tile.Floor:
+      return Color.Slate;
 
-    case Tiles.OpenDoor:
-    case Tiles.ClosedDoor:
-      return Colors.Brown;
+    case Tile.OpenDoor:
+    case Tile.ClosedDoor:
+      return Color.Brown;
 
-    case Tiles.Player:
-      return Colors.MagicBlue;
+    case Tile.Player:
+      return Color.MagicBlue;
 
-    case Tiles.StairsUp:
-    case Tiles.StairsDown:
-    case Tiles.Merchant:
-      return Colors.White;
+    case Tile.StairsUp:
+    case Tile.StairsDown:
+    case Tile.Merchant:
+      return Color.White;
 
     default:
-      return Colors.Orange;
+      return Color.Orange;
   }
 }
 
@@ -219,86 +298,100 @@ function monsterAttackBonus(level) {
 
 // returns a monsters saving throw values based on level
 function monsterSavingThrows(level) {
-  const saves = {
-      death:     14,
-      wands:     15,
-      paralysis: 16,
-      breath:    17,
-      spells:    18,
-    };
-
   switch(level) {
     case 0:
-      break;
     case 1:
+      return {
+        death:     14,
+        wands:     15,
+        paralysis: 16,
+        breath:    17,
+        spells:    18,
+      };
+
     case 2:
     case 3:
-      saves.death =     12;
-      saves.wands =     13;
-      saves.paralysis = 14;
-      saves.breath =    15;
-      saves.spells =    16;
-      break;
+      return {
+        death:     12,
+        wands:     13,
+        paralysis: 14,
+        breath:    15,
+        spells:    16,
+      };
     case 4:
     case 5:
     case 6:
-      saves.death =     10;
-      saves.wands =     11;
-      saves.paralysis = 12;
-      saves.breath =    13;
-      saves.spells =    14;
+      return {
+        death:     10,
+        wands:     11,
+        paralysis: 12,
+        breath:    13,
+        spells:    14,
+      };
+
     case 7:
     case 8:
     case 9:
-      saves.death =      8;
-      saves.wands =      9;
-      saves.paralysis = 10;
-      saves.breath =    10;
-      saves.spells =    12;
-      break;
+      return {
+        death:      8,
+        wands:      9,
+        paralysis: 10,
+        breath:    10,
+        spells:    12,
+      };
+
     case 10:
     case 11:
     case 12:
-      saves.death =      6;
-      saves.wands =      7;
-      saves.paralysis =  8;
-      saves.breath =     8;
-      saves.spells =    10;
+      return {
+        death:      6,
+        wands:      7,
+        paralysis:  8,
+        breath:     8,
+        spells:    10,
+      };
+
     case 13:
     case 14:
     case 15:
-      saves.death =      4;
-      saves.wands =      5;
-      saves.paralysis =  6;
-      saves.breath =     5;
-      saves.spells =     8;
+      return {
+        death:     4,
+        wands:     5,
+        paralysis: 6,
+        breath:    5,
+        spells:    8,
+      };
+
     case 16:
     case 17:
     case 18:
-      saves.death =      2;
-      saves.wands =      3;
-      saves.paralysis =  4;
-      saves.breath =     3;
-      saves.spells =     6;
-      break;
+      return {
+        death:     2,
+        wands:     3,
+        paralysis: 4,
+        breath:    3,
+        spells:    6,
+      };
+
     case 19:
     case 20:
     case 21:
-      saves.death =      2;
-      saves.wands =      2;
-      saves.paralysis =  2;
-      saves.breath =     2;
-      saves.spells =     4;
-      break;
+      return {
+        death:     2,
+        wands:     2,
+        paralysis: 2,
+        breath:    2,
+        spells:    4,
+      };
     default:
-      saves.death =      2;
-      saves.wands =      2;
-      saves.paralysis =  2;
-      saves.breath =     2;
-      saves.spells =     2;
+      return {
+        death:     2,
+        wands:     2,
+        paralysis: 2,
+        breath:    2,
+        spells:    2,
+      };
   }
-
-  return saves;
 }
 
 
@@ -311,7 +404,7 @@ function stringToGrid(s, world) {
       world.grid.push(
         {
           tile: s[i],
-          collision: s[i] === Tiles.Wall || s[i] === Tiles.ClosedDoor,
+          collision: s[i] === Tile.Wall || s[i] === Tile.ClosedDoor,
           visible: true,
           entity_id: 0,
         }
@@ -360,42 +453,42 @@ function drawMainMenu(img, ctx, world) {
   const optionXShift = 364; 
   const optionYShift = 160; 
   const optionOffset = 64; 
-  const highlightColor = Colors.DarkOrange;
+  const highlightColor = Color.DarkOrange;
 
   // Draw Background
-  ctx.fillStyle = Colors.Brown;
+  ctx.fillStyle = Color.Brown;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, frameWidth, frameWidth, canvas.width - 2 * frameWidth, canvas.height - 2 * frameWidth);
 
   // Draw Title Text
   ctx.font = "small-caps bold 64px cursive";
   ctx.fillStyle = "#101010";
-  ctx.strokeStyle = Colors.Orange;
+  ctx.strokeStyle = Color.Orange;
   ctx.fillText("Rogue JS", xShift, yShift);
   ctx.strokeText("Rogue JS", xShift, yShift);
 
   // Draw Options and selection highlight
   ctx.font = "small-caps bold 36px cursive";
 
-  for (let i = 0; i < world.optionList.length; i++) {
-    if (world.optionList[world.selection] === world.optionList[i]) {
+  for (let i = 0; i < world.options.length; i++) {
+    if (world.options[world.selection] === world.options[i]) {
       ctx.fillStyle = highlightColor;
     } else {
       ctx.fillStyle = "#101010";
     }
-    ctx.fillText(world.optionList[i], optionXShift, optionYShift + optionOffset * (i + 1));
-    ctx.strokeText(world.optionList[i], optionXShift, optionYShift + optionOffset * (i + 1));
+    ctx.fillText(world.options[i], optionXShift, optionYShift + optionOffset * (i + 1));
+    ctx.strokeText(world.options[i], optionXShift, optionYShift + optionOffset * (i + 1));
   }
 }
 
 // Sidebar window
 function drawSideBar(ctx, x, y) {
   const frameWidth = 4;
-  ctx.fillStyle = Colors.Brown;
-  ctx.strokeStyle = Colors.DarkBrown;
+  ctx.fillStyle = Color.Brown;
+  ctx.strokeStyle = Color.DarkBrown;
   ctx.fillRect(x, y, sideWidth, canvas.height);
   ctx.strokeRect(x, y, sideWidth, canvas.height);
-  ctx.fillStyle = Colors.DarkBrown;
+  ctx.fillStyle = Color.DarkBrown;
   ctx.fillRect(x + frameWidth, y + frameWidth, sideWidth - frameWidth * 2, canvas.height - frameWidth * 2);
 }
 
@@ -406,7 +499,7 @@ function drawGrid(ctx, world) {
       renderAscii(ctx, world);
       break;
     case RenderingMode.Tile:
-      renderTiles(ctx, world);
+      renderTile(ctx, world);
       break;
     default:
       renderAscii(ctx, world);
@@ -444,7 +537,7 @@ function drawDebugGrid(ctx, world) {
 
 function drawDebugStaticZone(ctx, world) {
   const res = world.camera.resolution;
-  const zoneBuffer = world.camera.moveBuffer;
+  const zoneBuffer = world.camera.deadZone;
   const halfWidth = canvas.width / 2;
   const halfHeight = canvas.height / 2;
   const halfRes = res / 2;
@@ -475,13 +568,13 @@ function renderAscii(ctx, world) {
 
   //ctx.font = "24px sans-serif";
   ctx.font = "24px serif";
-  ctx.fillStyle = Colors.White;
+  ctx.fillStyle = Color.White;
 
   let rowOffset = 0;
   let colOffset = 0;
   let square = null;
 
-  // Draw Map Tiles
+  // Draw Map Tile
   for (let row = 0; row < canvasGrids; row++) {
     for (let col = 0; col < canvasGrids; col++) {
       rowOffset = world.camera.position.y - center + row;
@@ -504,14 +597,14 @@ function renderAscii(ctx, world) {
   }
 }
 
-function renderTiles(ctx, world) {
+function renderTile(ctx, world) {
   renderAscii(ctx, world);
-  console.log("Render Tiles");
+  console.log("Render Tile");
 }
 
 // Handle camera movement
 function moveCamera(world) {
-  const buffer = world.camera.moveBuffer;
+  const buffer = world.camera.deadZone;
   const dx = Math.abs(world.entities[0].position.x - world.camera.position.x);
   const dy = Math.abs(world.entities[0].position.y - world.camera.position.y);
   const dir = world.entities[0].orientation;
@@ -562,7 +655,7 @@ function moveEntity(entity_id, dir, world) {
   // If the entity is the player, handle camera movement
   if (entity_id === player.id) {
     world.entities[0].orientation = dir;
-    world.events.push(Events.playerMoved);
+    world.events.push(Event.playerMoved);
   }
 
   return true;
@@ -570,15 +663,15 @@ function moveEntity(entity_id, dir, world) {
 
 // When an option is entered, this function will handle the state changes
 function handleSelectOption(world) {
-  switch(world.optionList[world.selection]) {
-    case MainMenuOptions.Continue:
+  switch(world.options[world.selection]) {
+    case MainMenuOption.Continue:
       console.log("Continue");
       break;
-    case MainMenuOptions.NewGame:
+    case MainMenuOption.NewGame:
       console.log("NewGame");
       break;
-    case MainMenuOptions.Tutorial:
-      world.events.push(Events.enterTutorial);
+    case MainMenuOption.Tutorial:
+      world.events.push(Event.enterTutorial);
       break;
   }
 }
@@ -591,17 +684,17 @@ function menuInput(world) {
       let keyDetected = false;
 
       switch (e.key) {
-        case Actions.MoveUp:
+        case Action.MoveUp:
           keyDetected = true;
-          world.selection = (world.selection + world.optionList.length - 1) % world.optionList.length;
+          world.selection = (world.selection + world.options.length - 1) % world.options.length;
           break;
-        case Actions.MoveDown:
+        case Action.MoveDown:
           keyDetected = true;
-          world.selection = (world.selection + 1) % world.optionList.length;
+          world.selection = (world.selection + 1) % world.options.length;
           break;
-        case Actions.Enter:
+        case Action.Enter:
           keyDetected = true;
-          world.events.push(Events.exitMainMenu);
+          world.events.push(Event.exitMainMenu);
           handleSelectOption(world);
           break;
       }
@@ -622,21 +715,21 @@ function playerInput(world) {
       let keyDetected = false;
 
       switch (e.key) {
-        case Actions.MoveUp:
+        case Action.MoveUp:
           keyDetected = true;
-          moveEntity(1, Directions.Up, world);
+          moveEntity(1, Direction.Up, world);
           break;
-        case Actions.MoveDown:
+        case Action.MoveDown:
           keyDetected = true;
-          moveEntity(1, Directions.Down, world);
+          moveEntity(1, Direction.Down, world);
           break;
-        case Actions.MoveLeft:
+        case Action.MoveLeft:
           keyDetected = true;
-          moveEntity(1, Directions.Left, world);
+          moveEntity(1, Direction.Left, world);
           break;
-        case Actions.MoveRight:
+        case Action.MoveRight:
           keyDetected = true;
-          moveEntity(1, Directions.Right, world);
+          moveEntity(1, Direction.Right, world);
           break;
       }
 
@@ -649,10 +742,10 @@ function playerInput(world) {
 }
 
 // Handle all event signals and state transitions here
-function handleEvents(ctx, world) {
+function handleEvent(ctx, world) {
   for (let i = 0; i < world.events.length; i++) {
     switch (world.events[i]) {
-      case Events.playerMoved:
+      case Event.playerMoved:
         moveCamera(world);
         clearGrid(ctx);
         drawGrid(ctx, world);
@@ -662,18 +755,18 @@ function handleEvents(ctx, world) {
         }
         break;
 
-      case Events.enterMainMenu:
-        world.state = WorldState.MainMenu;
+      case Event.enterMainMenu:
+        world.state = GameState.MainMenu;
         world.selection = 0;
         break;
-      case Events.exitMainMenu:
+      case Event.exitMainMenu:
         clearCanvas(ctx);
         break;
 
-      case Events.enterTutorial:
-        world.state = WorldState.Loading;
+      case Event.enterTutorial:
+        world.state = GameState.Loading;
         initializeTutorial(ctx, world);
-        world.state = WorldState.Running;
+        world.state = GameState.Running;
         break;
     }
   }
@@ -684,27 +777,27 @@ function handleEvents(ctx, world) {
 
 // Core game: input is blocking
 async function runGame(ctx, world) {
-  if (world.playerHasCharacter) {
-    world.optionList.push(MainMenuOptions.Continue);
+  if (world.saveFileExists) {
+    world.options.push(MainMenuOption.Continue);
   }
-  world.optionList.push(MainMenuOptions.NewGame);
-  world.optionList.push(MainMenuOptions.Tutorial);
-  world.events.push(Events.enterMainMenu);
+  world.options.push(MainMenuOption.NewGame);
+  world.options.push(MainMenuOption.Tutorial);
+  world.events.push(Event.enterMainMenu);
 
   // Main Loop
   while (true) {
 
     // Handle all events and state transitions
-    handleEvents(ctx, world);
+    handleEvent(ctx, world);
 
     switch(world.state) {
-      case WorldState.MainMenu:
+      case GameState.MainMenu:
         drawMainMenu(bgArt, ctx, world);
         await menuInput(world);
         clearCanvas(ctx);
         break;
 
-      case WorldState.Running:
+      case GameState.Running:
         await playerInput(world);
         break;
 
@@ -760,8 +853,8 @@ function initializeTutorial(ctx, world) {
 const player = {
   id: 1,
   position: {x: 0, y: 0},
-  orientation: Directions.Up,
-  tile: Tiles.Player,
+  orientation: Direction.Up,
+  tile: Tile.Player,
   collision: true,
   visible: true,
   name: "",
@@ -807,7 +900,7 @@ const player = {
 const bob = {
   id: 0,
   position: {x: 0, y: 0},
-  tile: Tiles.Merchant,
+  tile: Tile.Merchant,
   collision: true,
   visible: true,
   name: "Bob",
@@ -845,38 +938,6 @@ const bob = {
   attack: 0, // 20 - THAC0
 }
 
-// Example of a grid square object
-// const square = {
-//   tile: Tiles.Wall,
-//   collision: true,
-//   visible: true,
-//   entity_id: 0,
-// }
-
-// Camera determines the zoom level and position of the camera.
-// Always draws an N x N grid.
-const camera = {
-  position: {x: 0, y: 0},
-  resolution: gridResolution, // 1 tile = 24 Pixels
-  moveBuffer: 4, // Tile radius around camera before automatic movement.
-}
-
-// World is a collection of game data for the entire world
-const world = {
-  grid: [],     // Array of Square objects
-  entities: [], // Array of Entity objects (player, monsters, doors, etc.)
-  events: [],   // Array of Event signals
-  camera: camera,
-  renderer: RenderingMode.Ascii,
-  width: 0,
-  height: 0,
-  turns: 0,
-  state: WorldState.MainMenu,
-  optionList: [],
-  selection: 0,
-  playerHasCharacter: true,
-  debug: debug,
-}
 
 // GAME
 // If character exists in localStorage -> Load character and continue
