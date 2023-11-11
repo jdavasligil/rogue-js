@@ -6,6 +6,7 @@
  */
 
 // TODO
+// [ ] Refactor into modules.
 // [ ] Character Creation
 // [ ] Level Generation
 // [ ] Combat
@@ -15,8 +16,9 @@
 
 import { mulberry32 } from "../lib/fast-random.js";
 import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
+import { EntityManager } from "./entity-manager.js";
 
-const types = require("./types.js");
+const T = require("./types.js");
 
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
@@ -37,131 +39,16 @@ const debug = false;
 // Random Number Generator
 const rng = mulberry32(seed);
 
-/**
- * Enumeration of all event signals. This includes FSM transitions.
- * @enum {number}
- */
-const Event = {
-  playerMoved:   0,
-  enterMainMenu: 1,
-  exitMainMenu:  2,
-  enterTutorial: 3,
-  exitTutorial:  4,
-}
-
-/**
- * Enumeration of all game states.
- * @enum {number}
- */
-const GameState = {
-  MainMenu: 0,
-  Creation: 1,
-  Loading:  2,
-  Running:  3,
-}
-
-/**
- * Enumeration of all options in the main menu.
- * @enum {string}
- */
-const MainMenuOption = {
-  Continue: "Continue",
-  NewGame:  "New Game",
-  Tutorial: "Tutorial",
-}
-
-/**
- * Enumeration of all possible game action keybinds.
- * @enum {string}
- */
-const Action = {
-  MoveUp:    "ArrowUp",
-  MoveDown:  "ArrowDown",
-  MoveLeft:  "ArrowLeft",
-  MoveRight: "ArrowRight",
-  Enter:     "Enter",
-  Escape:    "Escape",
-}
-
-/**
- * Enumeration of all possible interaction modes.
- *
- * Normal - Open door, initiate trade.
- * Combat - Attack target, break object.
- * Social - Attempt to initiate dialogue.
- * Stealth - Pick lock, pick pocket, steal, sneak.
- * @readonly 
- * @enum {number}
- */
-const InteractMode = {
-  Normal:   0, 
-  Combat:   1,
-  Social:   2,
-  Stealth:  3, 
-}
-
-/**
- * Enumeration of all movement directions.
- * @enum {{x: number, y: number}}
- */
-const Direction = {
-  Up:    {x: 0, y:-1},
-  Down:  {x: 0, y: 1},
-  Left:  {x:-1, y: 0},
-  Right: {x: 1, y: 0},
-}
-
-/**
- * Enumeration of all map tiles including terrain and entities.
- * @readonly
- * @enum {number}
- */
-const Tile = {
-  Floor:      0,
-  Wall:       1,
-  OpenDoor:   2,
-  ClosedDoor: 3,
-  StairsUp:   4,
-  StairsDown: 5,
-  Player:     6,
-  Merchant:   7,
-}
-
-/**
- * Enumeration of custom color palette colors.
- * @readonly
- * @enum {string}
- */
-const Color = {
-  White:      "#E1D9D1",
-  Slate:      "#3C3A2D",
-  Brown:      "#684E11",
-  DarkBrown:  "#151004",
-  Orange:     "#EFBC74",
-  DarkOrange: "#c4761b",
-  MagicBlue:  "#0784b5",
-}
-
-/**
- * Enumeration of possible rendering modes.
- * @readonly
- * @enum {number}
- */
-const RenderingMode = {
-  Ascii: 0,
-  Tile: 1,
-}
-
 // Load ancestries and classes from data
 //const Ancestries = await getJSON("./data/ancestries.json");
 //const Classes = await getJSON("./data/classes.json");
 
 /**
  * Constructor for Camera.
- * @param {types.Position} position - The world position of the camera.
+ * @param {T.Position} position - The world position of the camera.
  * @param {number} resolution - Pixels per tile.
  * @param {number} deadZone - Distance moved from center before camera moves.
- * @returns {types.Camera}
+ * @returns {T.Camera}
  */
 function newCamera(position={x: 0, y: 0}, resolution=gridResolution, deadZone=4) {
   return {
@@ -173,7 +60,7 @@ function newCamera(position={x: 0, y: 0}, resolution=gridResolution, deadZone=4)
 
 /**
  * Constructor for Chunk.
- * @param {types.Position} position - The world position of the chunk.
+ * @param {T.Position} position - The world position of the chunk.
  * @returns {Chunk}
  */
 function newChunk(position) {
@@ -188,7 +75,7 @@ function newChunk(position) {
 
 /**
  * Constructor for ChunkMap.
- * @returns {types.ChunkMap}
+ * @returns {T.ChunkMap}
  */
 function newChunkMap() {
   return {
@@ -207,12 +94,12 @@ function newChunkMap() {
 
 /**
  * Constructor for the world.
- * @returns {types.World}
+ * @returns {T.World}
  */
 function newWorld() {
   return {
     chunks: newChunkMap(),
-    entities: new Map(),
+    entities: new EntityManager(),
     events: [],
     camera: newCamera(),
     renderer: RenderingMode.Ascii,
