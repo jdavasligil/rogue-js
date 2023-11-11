@@ -13,7 +13,10 @@
 
 "use strict";
 
-import { mulberry32 } from "./lib/fast-random.js";
+import { mulberry32 } from "../lib/fast-random.js";
+import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
+
+const types = require("./types.js");
 
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
@@ -21,10 +24,9 @@ const text = document.getElementById("game-text");
 const bgArt = document.getElementById("bg-art");
 const ctx = canvas.getContext("2d");
 
-// Set tweakable constants
+// Constants
 const sideWidth = Math.floor((canvas.width - canvas.height) / 2);
 const gridResolution = 18; // 18, 24, 32
-const canvasGrids = Math.floor(canvas.height / gridResolution);
 
 // A fixed seed is useful for recreating random state.
 const seed = 12345;
@@ -34,13 +36,6 @@ const debug = false;
 
 // Random Number Generator
 const rng = mulberry32(seed);
-
-// TYPES
-
-/**
- * A position on an x-y cartesian coordinate grid.
- * @typedef {{x: number, y: number}} Position
- */
 
 /**
  * Enumeration of all event signals. This includes FSM transitions.
@@ -157,26 +152,16 @@ const RenderingMode = {
   Tile: 1,
 }
 
-
 // Load ancestries and classes from data
 //const Ancestries = await getJSON("./data/ancestries.json");
 //const Classes = await getJSON("./data/classes.json");
 
 /**
- * The in-game camera determines the zoom level and rendering position.
- * @typedef Camera
- * @type {object}
- * @property {Position} position - The world grid position of the camera.
- * @property {number} resolution - The pixel resolution of each tile.
- * @property {number} deadZone - Distance travelled before camera moves.
- */
-
-/**
  * Constructor for Camera.
- * @param {Position} position - The world position of the camera.
+ * @param {types.Position} position - The world position of the camera.
  * @param {number} resolution - Pixels per tile.
  * @param {number} deadZone - Distance moved from center before camera moves.
- * @returns {Camera}
+ * @returns {types.Camera}
  */
 function newCamera(position={x: 0, y: 0}, resolution=gridResolution, deadZone=4) {
   return {
@@ -187,19 +172,8 @@ function newCamera(position={x: 0, y: 0}, resolution=gridResolution, deadZone=4)
 }
 
 /**
- * A Chunk is a 16x16 sub-array of the world map used for data streaming.
- * @typedef Chunk
- * @type {object}
- * @property {Position} position - World position of the chunk.
- * @property {TileGrid} tileGrid - Tile grid.
- * @property {BitGrid} visGrid - Visibility grid.
- * @property {BitGrid} colGrid - Collision grid.
- * @property {IDGrid} entGrid - Entity ID grid.
- */
-
-/**
  * Constructor for Chunk.
- * @param {Position} position - The world position of the chunk.
+ * @param {types.Position} position - The world position of the chunk.
  * @returns {Chunk}
  */
 function newChunk(position) {
@@ -213,26 +187,12 @@ function newChunk(position) {
 }
 
 /**
- * The ChunkMap stores references to 9 16x16 chunks in memory at a time.
- * @typedef ChunkMap
- * @type {object}
- * @property {Chunk} root - The central chunk.
- * @property {Chunk} N - The northern chunk.
- * @property {Chunk} NE - The northeastern chunk.
- * @property {Chunk} E - The eastern chunk.
- * @property {Chunk} SE - The southeastern chunk.
- * @property {Chunk} S - The southern chunk.
- * @property {Chunk} SW - The southwestern chunk.
- * @property {Chunk} W - The western chunk.
- * @property {Chunk} NW - The northwestern chunk.
- */
-
-/**
  * Constructor for ChunkMap.
- * @returns {ChunkMap}
+ * @returns {types.ChunkMap}
  */
 function newChunkMap() {
   return {
+    cache: new Map(),
     root: newChunk({x:   0, y:   0}),
     N:    newChunk({x:   0, y: -16}),
     NE:   newChunk({x:  16, y: -16}),
@@ -246,27 +206,8 @@ function newChunkMap() {
 }
 
 /**
- * The world holds all game state.
- * @typedef World
- * @type {object}
- * @property {ChunkMap} chunks - An octree holding per-chunk data buffers.
- * @property {Map.<number, object>} entities - A map to access entity data.
- * @property {Array.<Event>} events - An array for event signals for state change.
- * @property {Camera} camera - The top-down camera which renders the world.
- * @property {RenderingMode} renderer - How to draw the grid.
- * @property {number} width - Width of the world map.
- * @property {number} height - Height of the world map.
- * @property {number} turns - How many turns have passed (1 turn = 10 min).
- * @property {GameState} state - What state the game is currently in.
- * @property {Array.<MainMenuOption>} options - Main menu options available.
- * @property {number} selection - Current option menu selection.
- * @property {boolean} saveFileExists - True when save loaded from local storage.
- * @property {boolean} debug - Activates debugging features.
- */
-
-/**
  * Constructor for the world.
- * @returns {World}
+ * @returns {types.World}
  */
 function newWorld() {
   return {
@@ -289,6 +230,10 @@ function newWorld() {
 // Takes in a tile (string) and returns a color (string)
 // Used in the Ascii Renderer to determine default tile colors
 // Can be overwritten by colors set by an entity
+
+/**
+ *
+ */
 function matchTileColor(tile) {
   switch(tile) {
     case Tile.Floor:
@@ -312,6 +257,9 @@ function matchTileColor(tile) {
 }
 
 // Returns a monsters attack bonus based on their level
+/**
+ *
+ */
 function monsterAttackBonus(level) {
   switch(level) {
     case 0:
@@ -350,6 +298,9 @@ function monsterAttackBonus(level) {
 }
 
 // returns a monsters saving throw values based on level
+/**
+ *
+ */
 function monsterSavingThrows(level) {
   switch(level) {
     case 0:
@@ -449,6 +400,9 @@ function monsterSavingThrows(level) {
 
 
 // Map Generation
+/**
+ *
+ */
 function stringToGrid(s, world) {
   world.grid = [];
   let widthObtained = 0;
@@ -474,6 +428,9 @@ function stringToGrid(s, world) {
 // the downside is that it is difficult to remove entities
 // one option is to set the deleted entity in the array to null which
 // allows for cleanup, but fragments the array and will require null checks
+/**
+ *
+ */
 function spawnEntity(pos, world, entity) {
   entity.position = pos;
   entity.id = world.entities.length + 1;
@@ -482,23 +439,41 @@ function spawnEntity(pos, world, entity) {
 }
 
 // Text Window
-function setText(s) {
+/**
+ *
+ */
+function setText(text, s) {
   text.innerText = s;
 }
-function appendText(s) {
+/**
+ *
+ */
+function appendText(text, s) {
   text.innerText += "\n\n" + s;
 }
-function writeDescription(s) {
+/**
+ *
+ */
+function writeDescription(text, s) {
   text.innerHTML += "<p style='color: yellow;'>" + s + "</p><br />";
 }
-function writeAction(s) {
+/**
+ *
+ */
+function writeAction(text, s) {
   text.innerHTML += "<p style='color: red;'>" + s + "</p><br />";
 }
+/**
+ *
+ */
 function clearText() {
   text.innerHTML = "";
 }
 
 // Title screen
+/**
+ *
+ */
 function drawMainMenu(img, ctx, world) {
   const frameWidth = 4;
   const xShift = 325;
@@ -535,6 +510,9 @@ function drawMainMenu(img, ctx, world) {
 }
 
 // Sidebar window
+/**
+ *
+ */
 function drawSideBar(ctx, x, y) {
   const frameWidth = 4;
   ctx.fillStyle = Color.Brown;
@@ -546,6 +524,9 @@ function drawSideBar(ctx, x, y) {
 }
 
 // Game Window
+/**
+ *
+ */
 function drawGrid(ctx, world) {
   switch (world.renderer) {
     case RenderingMode.Ascii:
@@ -559,14 +540,23 @@ function drawGrid(ctx, world) {
   }
 }
 
+/**
+ *
+ */
 function clearCanvas(ctx) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+/**
+ *
+ */
 function clearGrid(ctx) {
   ctx.clearRect(sideWidth, 0, canvas.width - sideWidth * 2, canvas.height);
 }
 
+/**
+ *
+ */
 function drawDebugGrid(ctx, world) {
   const res = world.camera.resolution;
 
@@ -588,6 +578,9 @@ function drawDebugGrid(ctx, world) {
   }
 }
 
+/**
+ *
+ */
 function drawDebugStaticZone(ctx, world) {
   const res = world.camera.resolution;
   const zoneBuffer = world.camera.deadZone;
@@ -613,9 +606,13 @@ function drawDebugStaticZone(ctx, world) {
 
 // Rendering with ASCII
 // canvas grid center = camera position
+/**
+ *
+ */
 function renderAscii(ctx, world) {
   const textOffsetX = 2;
   const textOffsetY = 3;
+  const canvasGrids = Math.floor(canvas.height / gridResolution);
   const center = Math.floor(canvasGrids / 2);
   const res = world.camera.resolution;
 
@@ -650,17 +647,22 @@ function renderAscii(ctx, world) {
   }
 }
 
+/**
+ *
+ */
 function renderTile(ctx, world) {
   renderAscii(ctx, world);
   console.log("Render Tile");
 }
 
 // Handle camera movement
-function moveCamera(world) {
+/**
+ *
+ */
+function moveCamera(world, dir) {
   const buffer = world.camera.deadZone;
   const dx = Math.abs(world.entities[0].position.x - world.camera.position.x);
   const dy = Math.abs(world.entities[0].position.y - world.camera.position.y);
-  const dir = world.entities[0].orientation;
 
   if (dx > buffer || dy > buffer) {
     world.camera.position.x += dir.x;
@@ -671,6 +673,9 @@ function moveCamera(world) {
 // Handle player movement and collision
 // Takes in a direction map (up down left right)
 // Returns true for success, false for failure to move
+/**
+ *
+ */
 function moveEntity(entity_id, dir, world) {
   const oldPosition = world.entities[entity_id - 1].position;
   const currSquare = world.grid[oldPosition.y * world.width + oldPosition.x];
@@ -715,6 +720,9 @@ function moveEntity(entity_id, dir, world) {
 }
 
 // When an option is entered, this function will handle the state changes
+/**
+ *
+ */
 function handleSelectOption(world) {
   switch(world.options[world.selection]) {
     case MainMenuOption.Continue:
@@ -730,6 +738,9 @@ function handleSelectOption(world) {
 }
 
 // Event Listener for controlling menu input
+/**
+ *
+ */
 function menuInput(world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
@@ -761,6 +772,9 @@ function menuInput(world) {
 }
 
 // Event Listener for controlling player input
+/**
+ *
+ */
 function playerInput(world) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
@@ -795,6 +809,9 @@ function playerInput(world) {
 }
 
 // Handle all event signals and state transitions here
+/**
+ *
+ */
 function handleEvent(ctx, world) {
   for (let i = 0; i < world.events.length; i++) {
     switch (world.events[i]) {
@@ -829,6 +846,9 @@ function handleEvent(ctx, world) {
 }
 
 // Core game: input is blocking
+/**
+ *
+ */
 async function runGame(ctx, world) {
 
   const world = newWorld();
@@ -908,12 +928,12 @@ function initializeTutorial(ctx, world) {
 // Every entity has an id, position, tile, and collision flag
 const player = {
   id: 1,
+  name: "",
   position: {x: 0, y: 0},
-  orientation: Direction.Up,
-  tile: Tile.Player,
   collision: true,
   visible: true,
-  name: "",
+  tile: Tile.Player,
+  orientation: Direction.Up,
   ancestry: Ancestries.Human,
   class: Classes.Fighter,
   alignment: 0, // -5 to 5 (Chaos, Law)
@@ -999,4 +1019,4 @@ const bob = {
 // If character exists in localStorage -> Load character and continue
 // else -> run character creation and initialize a new world
 
-runGame(ctx);
+//runGame(ctx);
