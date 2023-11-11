@@ -7,20 +7,28 @@
 
 "use strict";
 
-const types = require("./types.js");
+const T = require("./types.js");
 
 /** Class for handling entity data and assigning new IDs. */
 export class EntityManager {
   constructor() {
     this.nextID = 1;
-    /** @type {Array.<types.Entity>} */
+    /** @type {Array.<T.Entity>} */
     this.data = [];
     this.idRecycleBin = [];
   }
 
   /**
+   * Deserialize from JSON.
+   * @param {object} json - JSON object.
+   */
+  static from(json) {
+    return Object.assign(new EntityManager(), json);
+  }
+
+  /**
    * Inserts an entity into the manager.
-   * @param {types.Entity} entity - Entity added.
+   * @param {T.Entity} entity - Entity added.
    */
   insert(entity) {
     switch(this.idRecycleBin.length === 0) {
@@ -40,7 +48,7 @@ export class EntityManager {
   /**
    * Remove and return the entity based on the given ID.
    * @param {number} entity_id - Entity id to be removed.
-   * @returns {types.Entity | null | undefined}
+   * @returns {T.Entity | null | undefined}
    */
   remove(entity_id) {
     if (entity_id > this.data.length) {

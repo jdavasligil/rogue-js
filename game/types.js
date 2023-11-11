@@ -81,11 +81,26 @@
  * @enum {number}
  */
 export const Event = {
-  playerMoved:   0,
-  enterMainMenu: 1,
-  exitMainMenu:  2,
-  enterTutorial: 3,
-  exitTutorial:  4,
+  PlayerMoved:   1,
+  EnterMainMenu: 2,
+  ExitMainMenu:  3,
+  EnterTutorial: 4,
+  ExitTutorial:  5,
+}
+
+/**
+ * Enumeration of all entity archetypes.
+ * @enum {number}
+ */
+export const EntityType = {
+  Door:     1,
+  Monster:  2,
+  Player:   3,
+  Portal:   4,
+  Stairs:   5,
+  Teleport: 6,
+  Trap:     7,
+  Treasure: 8,
 }
 
 /**
@@ -93,10 +108,10 @@ export const Event = {
  * @enum {number}
  */
 export const GameState = {
-  MainMenu: 0,
-  Creation: 1,
-  Loading:  2,
-  Running:  3,
+  MainMenu: 1,
+  Creation: 2,
+  Loading:  3,
+  Running:  4,
 }
 
 /**
@@ -110,7 +125,7 @@ export const MainMenuOption = {
 }
 
 /**
- * Enumeration of all possible game action keybinds.
+ * Enumeration of all game action keybinds.
  * @enum {string}
  */
 export const Action = {
@@ -120,6 +135,16 @@ export const Action = {
   MoveRight: "ArrowRight",
   Enter:     "Enter",
   Escape:    "Escape",
+}
+
+/**
+ * Enumeration of all grid resolutions supported by the camera. 
+ * @enum {number}
+ */
+export const Resolution = {
+  Low:   18,
+  Medium: 24,
+  High:  32,
 }
 
 /**
@@ -133,10 +158,10 @@ export const Action = {
  * @enum {number}
  */
 export const InteractMode = {
-  Normal:   0, 
-  Combat:   1,
-  Social:   2,
-  Stealth:  3, 
+  Normal:   1, 
+  Combat:   2,
+  Social:   3,
+  Stealth:  4, 
 }
 
 /**
@@ -156,14 +181,14 @@ export const Direction = {
  * @enum {number}
  */
 export const Tile = {
-  Floor:      0,
-  Wall:       1,
-  OpenDoor:   2,
-  ClosedDoor: 3,
-  StairsUp:   4,
-  StairsDown: 5,
-  Player:     6,
-  Merchant:   7,
+  Floor:      1,
+  Wall:       2,
+  OpenDoor:   3,
+  ClosedDoor: 4,
+  StairsUp:   5,
+  StairsDown: 6,
+  Player:     7,
+  Merchant:   8,
 }
 
 /**
@@ -187,8 +212,8 @@ export const Color = {
  * @enum {number}
  */
 export const RenderingMode = {
-  Ascii: 0,
-  Tile: 1,
+  Ascii: 1,
+  Tile:  2,
 }
 
 export {};
