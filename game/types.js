@@ -42,8 +42,8 @@
  */
 
 /**
- * The ChunkMap stores references to 9 16x16 chunks in memory at a time.
- * @typedef ChunkMap
+ * The ChunkManager stores references to 9 16x16 chunks in memory at a time.
+ * @typedef ChunkManager
  * @type {object}
  * @property {Map.<Position, Chunk>} cache - The chunk cache.
  * @property {Chunk} root - The central chunk.
@@ -61,7 +61,7 @@
  * The World holds all game state.
  * @typedef World
  * @type {object}
- * @property {ChunkMap} chunks - An octree holding per-chunk data buffers.
+ * @property {ChunkManager} chunks - An octree holding per-chunk data buffers.
  * @property {Map.<number, object>} entities - A map to access entity data.
  * @property {Array.<Event>} events - An array for event signals for state change.
  * @property {Camera} camera - The top-down camera which renders the world.

@@ -15,7 +15,6 @@
 "use strict";
 
 import { mulberry32 } from "../lib/fast-random.js";
-import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
 import { EntityManager } from "./entity-manager.js";
 
 const T = require("./types.js");
@@ -42,55 +41,6 @@ const rng = mulberry32(seed);
 // Load ancestries and classes from data
 //const Ancestries = await getJSON("./data/ancestries.json");
 //const Classes = await getJSON("./data/classes.json");
-
-/**
- * Constructor for Camera.
- * @param {T.Position} position - The world position of the camera.
- * @param {number} resolution - Pixels per tile.
- * @param {number} deadZone - Distance moved from center before camera moves.
- * @returns {T.Camera}
- */
-function newCamera(position={x: 0, y: 0}, resolution=gridResolution, deadZone=4) {
-  return {
-    position: position,
-    resolution: resolution,
-    deadZone: deadZone,
-  };
-}
-
-/**
- * Constructor for Chunk.
- * @param {T.Position} position - The world position of the chunk.
- * @returns {Chunk}
- */
-function newChunk(position) {
-  return {
-    position: position,
-    tileGrid: new TileGrid(16),
-    visGrid:  new BitGrid(16),
-    colGrid:  new BitGrid(16),
-    entGrid:  new IDGrid(16),
-  };
-}
-
-/**
- * Constructor for ChunkMap.
- * @returns {T.ChunkMap}
- */
-function newChunkMap() {
-  return {
-    cache: new Map(),
-    root: newChunk({x:   0, y:   0}),
-    N:    newChunk({x:   0, y: -16}),
-    NE:   newChunk({x:  16, y: -16}),
-    E:    newChunk({x:  16, y:   0}),
-    SE:   newChunk({x:  16, y:  16}),
-    S:    newChunk({x:   0, y:  16}),
-    SW:   newChunk({x: -16, y:  16}),
-    W:    newChunk({x: -16, y:   0}),
-    NW:   newChunk({x: -16, y: -16}),
-  };
-}
 
 /**
  * Constructor for the world.
@@ -699,7 +649,7 @@ function playerInput(world) {
 /**
  *
  */
-function handleEvent(ctx, world) {
+function handleEvents(ctx, world) {
   for (let i = 0; i < world.events.length; i++) {
     switch (world.events[i]) {
       case Event.playerMoved:
@@ -751,7 +701,7 @@ async function runGame(ctx, world) {
   while (true) {
 
     // Handle all events and state transitions
-    handleEvent(ctx, world);
+    handleEvents(ctx, world);
 
     switch(world.state) {
       case GameState.MainMenu:

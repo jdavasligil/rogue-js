@@ -12,7 +12,7 @@ const T = require("./types.js");
 /** Class for handling entity data and assigning new IDs. */
 export class EntityManager {
   constructor() {
-    this.nextID = 1;
+    this.nextID = 0;
     /** @type {Array.<T.Entity>} */
     this.data = [];
     this.idRecycleBin = [];
@@ -27,7 +27,7 @@ export class EntityManager {
   }
 
   /**
-   * Inserts an entity into the manager.
+   * Inserts an entity into the manager with ID recycling.
    * @param {T.Entity} entity - Entity added.
    */
   insert(entity) {
@@ -40,7 +40,7 @@ export class EntityManager {
 
       case False:
         entity.id = this.idRecycleBin.pop();
-        this.data[entity.id - 1] = entity;
+        this.data[entity.id] = entity;
         break;
     }
   }
@@ -51,18 +51,18 @@ export class EntityManager {
    * @returns {T.Entity | null | undefined}
    */
   remove(entity_id) {
-    if (entity_id > this.data.length) {
+    if (entity_id >= this.data.length) {
       return undefined;
     }
 
-    let entity = this.data[entity_id - 1];
+    let entity = this.data[entity_id];
 
     if (entity === null) {
       return null;
     }
 
     this.idRecycleBin.push(entity_id);
-    this.data[entity_id - 1] = null;
+    this.data[entity_id] = null;
 
     return entity;
   }
@@ -73,16 +73,16 @@ export class EntityManager {
    * @returns {number | null | undefined}
    */
   delete(entity_id) {
-    if (entity_id > this.data.length) {
+    if (entity_id >= this.data.length) {
       return undefined;
     }
 
-    if (this.data[entity_id - 1] === null) {
+    if (this.data[entity_id] === null) {
       return null;
     }
 
     this.idRecycleBin.push(entity_id);
-    this.data[entity_id - 1] = null;
+    this.data[entity_id] = null;
 
     return entity_id;
   }
