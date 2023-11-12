@@ -7,6 +7,9 @@
 
 "use strict";
 
+// TODO:
+// [ ] Write FAST parser for position. 
+
 import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
 
 const T = require("./types.js");
@@ -76,16 +79,21 @@ export class ChunkManager {
               W=undefined,
               NW=undefined) {
     this.cache = cache;
-    this.root  = (root) ? root : new Chunk({x:   0, y:   0});
-    this.N     = (N)    ? N    : new Chunk({x:   0, y: -16});
-    this.NE    = (NE)   ? NE   : new Chunk({x:  16, y: -16});
-    this.E     = (E)    ? E    : new Chunk({x:  16, y:   0});
-    this.SE    = (SE)   ? SE   : new Chunk({x:  16, y:  16});
-    this.S     = (S)    ? SE   : new Chunk({x:   0, y:  16});
-    this.SW    = (SW)   ? SW   : new Chunk({x: -16, y:  16});
-    this.W     = (W)    ? W    : new Chunk({x: -16, y:   0});
-    this.NW    = (NW)   ? NW   : new Chunk({x: -16, y: -16});
+    this.root  = (root) ? root : new Chunk({x: 0,           y: 0});
+    this.N     = (N)    ? N    : new Chunk({x: 0,           y: -Chunk.size});
+    this.NE    = (NE)   ? NE   : new Chunk({x: Chunk.size,  y: -Chunk.size});
+    this.E     = (E)    ? E    : new Chunk({x: Chunk.size,  y: 0});
+    this.SE    = (SE)   ? SE   : new Chunk({x: Chunk.size,  y: Chunk.size});
+    this.S     = (S)    ? SE   : new Chunk({x: 0,           y: Chunk.size});
+    this.SW    = (SW)   ? SW   : new Chunk({x: -Chunk.size, y: Chunk.size});
+    this.W     = (W)    ? W    : new Chunk({x: -Chunk.size, y: 0});
+    this.NW    = (NW)   ? NW   : new Chunk({x: -Chunk.size, y: -Chunk.size});
   }
+
+  // Chunks further than this (square / L-Inf) grid distance will be pruned
+  // distance > 2 otherwise cache will delete adjacent values
+  // larger values tradeoff space O(n^2) for performance
+  static get pruneDistance() { return 5; }
 
   /**
    * Deserialize from JSON.
@@ -210,6 +218,19 @@ export class ChunkManager {
         this.SW = bottomChunk;
 
         break;
+    }
+  }
+
+  /**
+   * Prevent the cache from becoming too large by pruning values far from root.
+   */
+  pruneCache() {
+    let pos;
+    for (const key of Object.keys(this.cache)) {
+      pos = JSON.parse(key); // Do this faster (serde)
+      if (pos > ChunkManager.pruneDistance) {
+        delete this.cache[key];
+      }
     }
   }
 }
