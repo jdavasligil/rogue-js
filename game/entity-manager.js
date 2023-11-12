@@ -12,7 +12,7 @@ const T = require("./types.js");
 /** Class for handling entity data and assigning new IDs. */
 export class EntityManager {
   constructor() {
-    this.nextID = 0;
+    this.nextID = 1;
     /** @type {Array.<T.Entity>} */
     this.data = [];
     this.idRecycleBin = [];
@@ -51,18 +51,18 @@ export class EntityManager {
    * @returns {T.Entity | null | undefined}
    */
   remove(entity_id) {
-    if (entity_id >= this.data.length) {
+    if (entity_id > this.data.length) {
       return undefined;
     }
 
-    let entity = this.data[entity_id];
+    let entity = this.data[entity_id - 1];
 
     if (entity === null) {
       return null;
     }
 
     this.idRecycleBin.push(entity_id);
-    this.data[entity_id] = null;
+    this.data[entity_id - 1] = null;
 
     return entity;
   }
@@ -73,16 +73,16 @@ export class EntityManager {
    * @returns {number | null | undefined}
    */
   delete(entity_id) {
-    if (entity_id >= this.data.length) {
+    if (entity_id > this.data.length) {
       return undefined;
     }
 
-    if (this.data[entity_id] === null) {
+    if (this.data[entity_id - 1] === null) {
       return null;
     }
 
     this.idRecycleBin.push(entity_id);
-    this.data[entity_id] = null;
+    this.data[entity_id - 1] = null;
 
     return entity_id;
   }
