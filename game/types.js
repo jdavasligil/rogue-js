@@ -140,6 +140,17 @@ export const Direction = {
 }
 
 /**
+ * Enumeration of all cardinal directions.
+ * @enum {number}
+ */
+export const Cardinal = {
+  N: 1,
+  E: 2,
+  S: 3,
+  W: 4,
+}
+
+/**
  * Enumeration of all map tiles including terrain and entities.
  * @readonly
  * @enum {number}

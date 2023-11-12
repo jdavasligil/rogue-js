@@ -16,7 +16,9 @@ export class Camera {
     * @param {number} resolution - Pixels per tile.
     * @param {number} deadZone - Distance moved from center before camera moves.
     */
-  constructor(position={x: 0, y:0}, resolution=T.Resolution.Medium, deadZone=4) {
+  constructor(position={x: 0, y:0},
+              resolution=T.Resolution.Medium,
+              deadZone=4) {
     this.position = position;
     this.resolution = resolution;
     this.deadZone = deadZone;
