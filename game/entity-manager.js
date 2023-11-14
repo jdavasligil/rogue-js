@@ -11,6 +11,10 @@ const T = require("./types.js");
 
 /** Class for handling entity data and assigning new IDs. */
 export class EntityManager {
+  /**
+   * Create an EntityManager.
+   * @returns {EntityManager}
+   */
   constructor() {
     this.nextID = 1;
     /** @type {Array.<T.Entity>} */
