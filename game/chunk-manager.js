@@ -7,10 +7,9 @@
 
 "use strict";
 
-// TODO:
-// [ ] Write FAST parser for position. 
-
 import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
+import { distance2DLInf } from "../lib/game-math.js";
+import { parsePosition } from "../lib/serde.js";
 
 const T = require("./types.js");
 
@@ -90,6 +89,9 @@ export class ChunkManager {
     this.NW    = (NW)   ? NW   : new Chunk({x: -Chunk.size, y: -Chunk.size});
   }
 
+  // A temporary position store used during pruning that reduces overhead.
+  static positionStore = {x: 0, y: 0};
+
   // Chunks further than this (square / L-Inf) grid distance will be pruned
   // distance > 2 otherwise cache will delete adjacent values
   // larger values tradeoff space O(n^2) for performance
@@ -119,7 +121,7 @@ export class ChunkManager {
   /**
    * Reroot the tree based on the given cardinal direction.
    * Triggered by an event when the player moves past the root boundary.
-   * Called when new chunk data promise is fulfilled.
+   * Called when new chunk data is loaded.
    * @param {T.Cardinal} cardinal - A cardinal direction.
    * @param {Chunk} topChunk - Top / left most chunk.
    * @param {Chunk} midChunk - Middle chunk.
@@ -225,10 +227,9 @@ export class ChunkManager {
    * Prevent the cache from becoming too large by pruning values far from root.
    */
   pruneCache() {
-    let pos;
     for (const key of Object.keys(this.cache)) {
-      pos = JSON.parse(key); // Do this faster (serde)
-      if (pos > ChunkManager.pruneDistance) {
+      Object.assign(ChunkManager.positionStore, parsePosition(key));
+      if (distance2DLInf(ChunkManager.positionStore, this.root.position) > ChunkManager.pruneDistance) {
         delete this.cache[key];
       }
     }
