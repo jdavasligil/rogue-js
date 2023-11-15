@@ -64,35 +64,6 @@ function newWorld() {
   };
 }
 
-// Takes in a tile (string) and returns a color (string)
-// Used in the Ascii Renderer to determine default tile colors
-// Can be overwritten by colors set by an entity
-
-/**
- *
- */
-function matchTileColor(tile) {
-  switch(tile) {
-    case Tile.Floor:
-      return Color.Slate;
-
-    case Tile.OpenDoor:
-    case Tile.ClosedDoor:
-      return Color.Brown;
-
-    case Tile.Player:
-      return Color.MagicBlue;
-
-    case Tile.StairsUp:
-    case Tile.StairsDown:
-    case Tile.Merchant:
-      return Color.White;
-
-    default:
-      return Color.Orange;
-  }
-}
-
 // Returns a monsters attack bonus based on their level
 /**
  *
