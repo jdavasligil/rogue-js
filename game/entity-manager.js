@@ -7,7 +7,7 @@
 
 "use strict";
 
-const T = require("./types.js");
+//const T = require("./types.js");
 
 /** Class for handling entity data and assigning new IDs. */
 export class EntityManager {
