@@ -15,6 +15,9 @@
 "use strict";
 
 import { mulberry32 } from "../lib/fast-random.js";
+import { RingBuffer } from "../lib/ring-buffer.js";
+import { Camera } from "./camera.js";
+import { ChunkManager } from "./chunk-manager.js";
 import { EntityManager } from "./entity-manager.js";
 
 const T = require("./types.js");
@@ -48,14 +51,12 @@ const rng = mulberry32(seed);
  */
 function newWorld() {
   return {
-    chunks: newChunkMap(),
+    chunks: new ChunkManager(),
     entities: new EntityManager(),
-    events: [],
-    camera: newCamera(),
+    events: new RingBuffer(),
+    camera: new Camera(),
     renderer: RenderingMode.Ascii,
-    width: 0,
-    height: 0,
-    turns: 0,
+    turn: 0,
     state: GameState.Loading,
     options: [],
     selection: 0,

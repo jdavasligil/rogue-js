@@ -5,16 +5,13 @@
  * @package
  */
 
-import { Tile } from "./types";
-
-// Takes in a tile (string) and returns a color (string)
-// Used in the Ascii Renderer to determine default tile colors
-// Can be overwritten by colors set by an entity
+import { Color, Tile } from "./types";
 
 /**
  * Used by renderer in ASCII mode to match default tile colors.
  * Overridden by colors set by an entity.
- * @param {Tile} tile - 
+ * @param {Tile} tile - Tile enum.
+ * @returns {Color}
  */
 function matchTileColor(tile) {
   switch(tile) {

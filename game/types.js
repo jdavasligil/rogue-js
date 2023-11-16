@@ -4,6 +4,9 @@
 
 "use strict"
 
+import { ChunkManager } from "./chunk-manager"
+import { EntityManager } from "./entity-manager"
+
 /**
  * A Position on an x-y cartesian coordinate grid.
  * @typedef {{x: number, y: number}} Position
@@ -26,7 +29,7 @@
  * @typedef World
  * @type {object}
  * @property {ChunkManager} chunks - An octree holding per-chunk data buffers.
- * @property {Map.<number, object>} entities - A map to access entity data.
+ * @property {EntityManager} entities - A map to access entity data.
  * @property {Array.<Event>} events - An array for event signals for state change.
  * @property {Camera} camera - The top-down camera which renders the world.
  * @property {RenderingMode} renderer - How to draw the grid.
