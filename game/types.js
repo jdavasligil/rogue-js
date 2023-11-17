@@ -4,8 +4,8 @@
 
 "use strict"
 
-import { ChunkManager } from "./chunk-manager"
-import { EntityManager } from "./entity-manager"
+import { ChunkManager } from "./chunk-manager.js"
+import { EntityManager } from "./entity-manager.js"
 
 /**
  * A Position on an x-y cartesian coordinate grid.
