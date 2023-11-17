@@ -732,54 +732,6 @@ function initializeTutorial(ctx, world) {
   }
 }
 
-// Player Data
-// Player is an entity
-// Every entity has an id, position, tile, and collision flag
-const player = {
-  id: 1,
-  name: "",
-  position: {x: 0, y: 0},
-  collision: true,
-  visible: true,
-  tile: Tile.Player,
-  orientation: Direction.Up,
-  ancestry: Ancestries.Human,
-  class: Classes.Fighter,
-  alignment: 0, // -5 to 5 (Chaos, Law)
-  level: 1,
-  experience: 0,
-  gold: 0,
-  weight: 0, // in gold coins
-  inventory: [],
-  equipment: [],
-  speed: 24, // squares per turn (10 in-game minutes)
-  stats: {
-      str: 0,
-      dex: 0,
-      con: 0,
-      int: 0,
-      wis: 0,
-      cha: 0,
-      maxStr: 0,
-      maxDex: 0,
-      maxCon: 0,
-      maxInt: 0,
-      maxWis: 0,
-      maxCha: 0,
-    },
-  saves: {
-      death: 0,
-      wands: 0,
-      paralysis: 0,
-      breath: 0,
-      spells: 0,
-    },
-  hitPoints: 0,
-  maxHitPoints: 0,
-  armorClass: 0,
-  maxArmorClass: 0,
-  attack: 0, // 20 - THAC0
-}
 
 // Bob is a prototypical NPC
 const bob = {

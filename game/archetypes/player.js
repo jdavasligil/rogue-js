@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { Direction, Tile } from "../types";
+import { Direction, EntityType, Tile } from "../types";
 
 /** Data class representing player data */
 export class Player {
@@ -21,12 +21,15 @@ export class Player {
    * @returns {Player}
    */
   constructor(
+    id=(EntityType.Player << 24),
     name="Jimothy",
     position={x:0, y:0},
     ancestry="Human",
     combatClass="Fighter",
     gold=100,
   ) {
+    this.memoryFree = false;
+    this.id = id;
     this.name = name;
     this.position = position;
     this.collision = true;
