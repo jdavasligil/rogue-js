@@ -13,37 +13,42 @@ const text = document.getElementById("game-text");
 const bgArt = document.getElementById("bg-art");
 const ctx = canvas.getContext("2d");
 
-let cm = new ChunkManager;
-let em = new EntityManager;
 let ev = new RingBuffer;
+function testEnttityManager() {
+  let em = new EntityManager;
 
-/**
- * @param {ChunkManager} cm
- */
-function logChunkManager(cm) {
-  let outstr = "";
-  outstr += '(' + cm.NW.position.x + ',' + cm.NW.position.y + ') ';
-  outstr += '(' + cm.N.position.x + ',' + cm.N.position.y + ') ';
-  outstr += '(' + cm.NE.position.x + ',' + cm.NE.position.y + ') ';
-  outstr += '\n';
-  outstr += '(' + cm.W.position.x + ',' + cm.W.position.y + ') ';
-  outstr += '(' + cm.root.position.x + ',' + cm.root.position.y + ') ';
-  outstr += '(' + cm.E.position.x + ',' + cm.E.position.y + ') ';
-  outstr += '\n';
-  outstr += '(' + cm.SW.position.x + ',' + cm.SW.position.y + ') ';
-  outstr += '(' + cm.S.position.x + ',' + cm.S.position.y + ') ';
-  outstr += '(' + cm.SE.position.x + ',' + cm.SE.position.y + ') ';
-  outstr += '\n';
-  console.log(outstr);
 }
 
-logChunkManager(cm);
-console.log(JSON.stringify(cm.cache));
+function testChunkManager() {
+  let cm = new ChunkManager;
+    /**
+      * @param {ChunkManager} cm
+      */
+    function logChunkManager(cm) {
+      let outstr = "";
+      outstr += '(' + cm.NW.position.x + ',' + cm.NW.position.y + ') ';
+      outstr += '(' + cm.N.position.x + ',' + cm.N.position.y + ') ';
+      outstr += '(' + cm.NE.position.x + ',' + cm.NE.position.y + ') ';
+      outstr += '\n';
+      outstr += '(' + cm.W.position.x + ',' + cm.W.position.y + ') ';
+      outstr += '(' + cm.root.position.x + ',' + cm.root.position.y + ') ';
+      outstr += '(' + cm.E.position.x + ',' + cm.E.position.y + ') ';
+      outstr += '\n';
+      outstr += '(' + cm.SW.position.x + ',' + cm.SW.position.y + ') ';
+      outstr += '(' + cm.S.position.x + ',' + cm.S.position.y + ') ';
+      outstr += '(' + cm.SE.position.x + ',' + cm.SE.position.y + ') ';
+      outstr += '\n';
+      console.log(outstr);
+    }
 
-cm.reroot(Cardinal.N, new Chunk({x:-16,y:-32}), new Chunk({x:0,y:-32}), new Chunk({x:16,y:-32}));
+  logChunkManager(cm);
+  console.log(JSON.stringify(cm.cache));
 
-logChunkManager(cm);
-console.log(Object.keys(cm.cache));
+  cm.reroot(Cardinal.N, new Chunk({x:-16,y:-32}), new Chunk({x:0,y:-32}), new Chunk({x:16,y:-32}));
 
-cm.reroot(Cardinal.S, cm.cache['{"x":-16,"y":16}'], cm.cache['{"x":0,"y":16}'], cm.cache['{"x":16,"y":16}']);
-logChunkManager(cm);
+  logChunkManager(cm);
+  console.log(Object.keys(cm.cache));
+
+  cm.reroot(Cardinal.S, cm.cache['{"x":-16,"y":16}'], cm.cache['{"x":0,"y":16}'], cm.cache['{"x":16,"y":16}']);
+  logChunkManager(cm);
+}

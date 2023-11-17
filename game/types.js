@@ -60,14 +60,14 @@ export const Event = {
  * @enum {number}
  */
 export const EntityType = {
-  Door:     1,
-  Monster:  2,
-  Player:   3,
-  Portal:   4,
-  Stairs:   5,
-  Teleport: 6,
-  Trap:     7,
-  Treasure: 8,
+  Player:   0xFF,
+  Monster:  0xFE,
+  Trap:     0xFD,
+  Door:     0xFC,
+  Stairs:   0xFB,
+  Treasure: 0xFA,
+  Teleport: 0xF9,
+  Portal:   0xF8,
 }
 
 /**
@@ -185,7 +185,7 @@ export const Color = {
 }
 
 /**
- * Enumeration of possible rendering modes.
+ * Enumeration of rendering modes.
  * @readonly
  * @enum {number}
  */

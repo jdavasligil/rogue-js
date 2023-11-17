@@ -7,7 +7,15 @@
 
 "use strict";
 
-//const T = require("./types.js");
+import { EntityType } from "./types";
+
+/**
+ * An entity ID is a 32 bit unsigned integer where the leftmost 8 bits
+ * store the entity type, and the 24 remaining bits contain the index.
+ * The entity type is enumerated descending from 255 - 1, and indexed by
+ * the complement: ID - 255.
+ * @typedef {number} EntityID 
+ */
 
 /** Class for handling entity data and assigning new IDs. */
 export class EntityManager {
@@ -17,8 +25,8 @@ export class EntityManager {
    */
   constructor() {
     this.nextID = 1;
-    /** @type {Array.<T.Entity>} */
-    this.data = [];
+    /** @type {Array.<Array.<object>>} */
+    this.data = Array(Object.values(EntityType).length);
     this.idRecycleBin = [];
   }
 
@@ -28,6 +36,32 @@ export class EntityManager {
    */
   static from(json) {
     return Object.assign(new EntityManager(), json);
+  }
+
+  /**
+   * Create an Entity ID from a given type and index.
+   * @param {EntityID} id - An entity ID.
+   */
+  static createID(type, idx) {
+    return (type << 24) | idx;
+  }
+
+  /**
+   * Retrieve the type value from the given entity ID.
+   * @param {EntityID} id - An entity ID.
+   * @returns {number}
+   */
+  static getIDType(id) {
+    return (id & (0xFF << 24)) >>> 24;
+  }
+
+  /**
+   * Retrieve the type index from the given entity ID.
+   * @param {EntityID} id - An entity ID.
+   * @returns {number}
+   */
+  static getIDIndex(id) {
+    return (id & ~(0xFF << 24));
   }
 
   /**
