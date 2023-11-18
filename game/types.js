@@ -176,7 +176,8 @@ export const Tile = {
   StairsUp:   5,
   StairsDown: 6,
   Player:     7,
-  Merchant:   8,
+  Monster:    8,
+  Merchant:   9,
 }
 
 /**

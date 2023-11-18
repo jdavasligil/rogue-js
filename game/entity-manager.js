@@ -7,6 +7,8 @@
 
 "use strict";
 
+import { Monster } from "./archetypes/monster";
+import { Player } from "./archetypes/player";
 import { EntityType } from "./types";
 
 /**
@@ -24,10 +26,20 @@ export class EntityManager {
    * @returns {EntityManager}
    */
   constructor() {
-    this.nextID = 1;
+    let types = Object.values(EntityType);
+
     /** @type {Array.<Array.<object>>} */
-    this.data = Array(Object.values(EntityType).length);
-    this.idRecycleBin = [];
+    this.data = Array(types.length);
+
+    // Initialize data pool by creating objects of each type.
+    for (let i = 0; i < types.length; ++i) {
+      this.data[0xFF - types[i]] = Array(EntityManager.poolSizeFrom(types[i]));
+      for (let j = 0; j < EntityManager.poolSizeFrom(types[i]); ++j) {
+        this.data[0xFF - types[i]][j] = new EntityManager.classFrom(types[i])(
+          EntityManager.createID(types[i], j) 
+        );
+      }
+    }
   }
 
   /**
@@ -39,8 +51,38 @@ export class EntityManager {
   }
 
   /**
+   * Match entity type to pool size.
+   * @param {EntityType} type - An entity type enum.
+   * @returns {number}
+   */
+  static poolSizeFrom(type) {
+    switch(type) {
+      case EntityType.Player:
+        return 1;
+      default:
+        return 256;
+    }
+  }
+
+  /**
+   * Match entity type to class.
+   * @param {EntityType} type - An entity type enum.
+   * @returns {object}
+   */
+  static classFrom(type) {
+    switch(type) {
+      case EntityType.Player:
+        return Player;
+      case EntityType.Monster:
+        return Monster;
+      default:
+        return Monster;
+    }
+  }
+
+  /**
    * Create an Entity ID from a given type and index.
-   * @param {EntityID} id - An entity ID.
+   * @param {EntityID} ID - An entity ID.
    */
   static createID(type, idx) {
     return (type << 24) | idx;
@@ -48,7 +90,7 @@ export class EntityManager {
 
   /**
    * Retrieve the type value from the given entity ID.
-   * @param {EntityID} id - An entity ID.
+   * @param {EntityID} ID - An entity ID.
    * @returns {number}
    */
   static getIDType(id) {
@@ -57,7 +99,7 @@ export class EntityManager {
 
   /**
    * Retrieve the type index from the given entity ID.
-   * @param {EntityID} id - An entity ID.
+   * @param {EntityID} ID - An entity ID.
    * @returns {number}
    */
   static getIDIndex(id) {
@@ -65,63 +107,69 @@ export class EntityManager {
   }
 
   /**
-   * Inserts an entity into the manager with ID recycling.
-   * @param {T.Entity} entity - Entity added.
+   * Returns a pointer to the entity associated with the id.
+   * @param {EntityID} ID - Entity ID to lookup.
+   * @returns {object}
+   */
+  lookup(id) {
+    return this.data[EntityManager.getIDType(id)][EntityManager.getIDIndex(id)];
+  }
+
+  /**
+   * Returns true if memory is available for the desired ID.
+   * @param {EntityID} ID - Entity ID to lookup.
+   * @returns {boolean}
+   */
+  checkFree(id) {
+    return this.lookup(id).free;
+  }
+
+  /**
+   * Inserts an entity into the manager. Returns zero on failure.
+   * @param {object} entity - Entity added.
+   * @return {EntityID}
    */
   insert(entity) {
-    switch(this.idRecycleBin.length === 0) {
-      case True:
-        entity.id = this.nextID;
-        this.data.push(entity);
-        this.nextID += 1;
-        break;
+    let poolEntity = this.lookup(entity.id);
 
-      case False:
-        entity.id = this.idRecycleBin.pop();
-        this.data[entity.id] = entity;
-        break;
+    if (poolEntity.free) {
+      Object.assign(poolEntity, entity);
+      poolEntity.free = false;
+
+      return entity.id;
     }
+
+    let type = EntityManager.getIDType(entity.id);
+    let id = 0;
+
+    for (let i = 0; i < EntityManager.poolSizeFrom(type); ++i) {
+      id = EntityManager.createID(type, i);
+      poolEntity = this.lookup(id);
+
+      if (poolEntity.free) {
+        Object.assign(poolEntity, entity);
+        poolEntity.free = false;
+        poolEntity.id = id;
+
+        return id;
+      }
+    }
+
+    return 0;
   }
 
   /**
    * Remove and return the entity based on the given ID.
-   * @param {number} entity_id - Entity id to be removed.
+   * @param {number} entity_id - Entity ID to be removed.
    * @returns {T.Entity | null | undefined}
    */
   remove(entity_id) {
-    if (entity_id > this.data.length) {
-      return undefined;
-    }
-
-    let entity = this.data[entity_id - 1];
-
-    if (entity === null) {
-      return null;
-    }
-
-    this.idRecycleBin.push(entity_id);
-    this.data[entity_id - 1] = null;
-
-    return entity;
   }
 
   /**
    * Delete the entity based on the given ID.
-   * @param {number} entity_id - Entity id to be deleted.
+   * @param {number} entity_id - Entity ID to be deleted.
    * @returns {number | null | undefined}
    */
   delete(entity_id) {
-    if (entity_id > this.data.length) {
-      return undefined;
-    }
-
-    if (this.data[entity_id - 1] === null) {
-      return null;
-    }
-
-    this.idRecycleBin.push(entity_id);
-    this.data[entity_id - 1] = null;
-
-    return entity_id;
-  }
 }

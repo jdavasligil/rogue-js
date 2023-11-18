@@ -7,48 +7,37 @@
 
 "use strict";
 
-import { Direction, EntityType, Literacy, Tile } from "../types";
+import { Direction, Literacy, Tile } from "../types";
 
 /** Data class representing player data */
 export class Player {
   /**
    * Create a Player.
-   * @param {string} name - Character name.
-   * @param {import("../types").Position} position - Spawn position.
-   * @param {string} ancestry - Character ancestry.
-   * @param {string} combatClass - Character combat class.
-   * @param {string} primeRequisite - The primary ability score used by class.
-   * @param {number} gold - Starting gold.
+   * @param {number} id - Entity id.
    * @returns {Player}
    */
-  constructor(
-    id=(EntityType.Player << 24),
-    name="Jimothy",
-    position={x:0, y:0},
-    ancestry="Human",
-    combatClass="Fighter",
-    primeRequisite="str",
-    gold=100
-  ) {
-    this.memoryFree = false;
+  constructor(id) {
+    this.free = true;
+
     this.id = id;
-    this.name = name;
-    this.position = position;
+    this.tile = Tile.Player;
+    this.position = {x:0, y:0};
+    this.orientation = Direction.Up;
     this.collision = true;
     this.visible = true;
-    this.tile = Tile.Player;
-    this.orientation = Direction.Up;
-    this.ancestry = ancestry;
-    this.combatClass = combatClass;
+
+    this.name = "";
+    this.ancestry = "";
+    this.combatClass = "";
     this.title = "";
     this.backstory = "";
-    this.primeRequisite = primeRequisite;
+    this.primeRequisite = "";
     this.alignment = 0;
     this.level = 1;
     this.experience = 0;
     this.coins = {
       platinum: 0,
-      gold: gold,
+      gold: 0,
       electrum: 0,
       silver: 0,
       copper: 0,
