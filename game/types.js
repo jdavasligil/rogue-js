@@ -71,6 +71,16 @@ export const EntityType = {
 }
 
 /**
+ * Enumeration of literacy levels.
+ * @enum {number}
+ */
+export const Literacy = {
+  Illiterate: 1,
+  Basic:      2,
+  Literate:   3,
+}
+
+/**
  * Enumeration of all game states.
  * @enum {number}
  */
