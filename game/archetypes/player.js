@@ -7,17 +7,16 @@
 
 "use strict";
 
-import { Direction, Literacy, Tile } from "../types";
+import { Direction, EntityType, Literacy, Tile } from "../types";
 
 /** Data class representing player data */
 export class Player {
   /**
    * Create a Player.
-   * @param {number} id - Entity id.
    * @returns {Player}
    */
-  constructor(id) {
-    this.id = id;
+  constructor() {
+    this.id = (0xFF - EntityType.Player) << 24;
     this.tile = Tile.Player;
     this.position = {x:0, y:0};
     this.orientation = Direction.Up;
@@ -150,9 +149,9 @@ export class Player {
       case 15:
       case 16:
       case 17:
-        return +1;
+        return 1;
       case 18:
-        return +2;
+        return 2;
       default:
         return 0;
     }

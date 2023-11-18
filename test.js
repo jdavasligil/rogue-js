@@ -1,5 +1,6 @@
 "use strict";
 
+import { Player } from "./game/archetypes/player.js";
 import { Chunk, ChunkManager } from "./game/chunk-manager.js";
 import { EntityManager } from "./game/entity-manager.js";
 import { Cardinal } from "./game/types.js";
@@ -15,8 +16,15 @@ const ctx = canvas.getContext("2d");
 
 let ev = new RingBuffer;
 function testEnttityManager() {
-  let em = new EntityManager;
+  let em = new EntityManager();
+  em.insert(new Player());
+  em.insert(new Monster());
+  em.insert(new Monster());
+  em.insert(new Monster());
+  em.insert(new Monster());
+  em.insert(new Monster());
 
+  console.log(em.data);
 }
 
 function testChunkManager() {

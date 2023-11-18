@@ -48,11 +48,11 @@ import { EntityManager } from "./entity-manager.js"
  * @enum {number}
  */
 export const Event = {
-  PlayerMoved:   1,
-  EnterMainMenu: 2,
-  ExitMainMenu:  3,
-  EnterTutorial: 4,
-  ExitTutorial:  5,
+  PlayerMoved:   0,
+  EnterMainMenu: 1,
+  ExitMainMenu:  2,
+  EnterTutorial: 3,
+  ExitTutorial:  4,
 }
 
 /**
@@ -60,14 +60,14 @@ export const Event = {
  * @enum {number}
  */
 export const EntityType = {
-  Player:   0xFF,
-  Monster:  0xFE,
-  Trap:     0xFD,
-  Door:     0xFC,
-  Stairs:   0xFB,
-  Treasure: 0xFA,
-  Teleport: 0xF9,
-  Portal:   0xF8,
+  Player:   0,
+  Monster:  1,
+  Trap:     2,
+  Door:     3,
+  Stairs:   4,
+  Treasure: 5,
+  Teleport: 6,
+  Portal:   7,
 }
 
 /**
@@ -75,9 +75,9 @@ export const EntityType = {
  * @enum {number}
  */
 export const Literacy = {
-  Illiterate: 1,
-  Basic:      2,
-  Literate:   3,
+  Illiterate: 0,
+  Basic:      1,
+  Literate:   2,
 }
 
 /**
@@ -85,10 +85,10 @@ export const Literacy = {
  * @enum {number}
  */
 export const GameState = {
-  MainMenu: 1,
-  Creation: 2,
-  Loading:  3,
-  Running:  4,
+  MainMenu: 0,
+  Creation: 1,
+  Loading:  2,
+  Running:  3,
 }
 
 /**
@@ -119,9 +119,9 @@ export const Action = {
  * @enum {number}
  */
 export const Resolution = {
-  Low:   18,
+  Low:    18,
   Medium: 24,
-  High:  32,
+  High:   32,
 }
 
 /**
@@ -135,10 +135,10 @@ export const Resolution = {
  * @enum {number}
  */
 export const InteractMode = {
-  Normal:   1, 
-  Combat:   2,
-  Social:   3,
-  Stealth:  4, 
+  Normal:   0, 
+  Combat:   1,
+  Social:   2,
+  Stealth:  3, 
 }
 
 /**
@@ -157,10 +157,10 @@ export const Direction = {
  * @enum {number}
  */
 export const Cardinal = {
-  N: 1,
-  E: 2,
-  S: 3,
-  W: 4,
+  N: 0,
+  E: 1,
+  S: 2,
+  W: 3,
 }
 
 /**
@@ -169,15 +169,15 @@ export const Cardinal = {
  * @enum {number}
  */
 export const Tile = {
-  Floor:      1,
-  Wall:       2,
-  OpenDoor:   3,
-  ClosedDoor: 4,
-  StairsUp:   5,
-  StairsDown: 6,
-  Player:     7,
-  Monster:    8,
-  Merchant:   9,
+  Floor:      0,
+  Wall:       1,
+  OpenDoor:   2,
+  ClosedDoor: 3,
+  StairsUp:   4,
+  StairsDown: 5,
+  Player:     6,
+  Monster:    7,
+  Merchant:   8,
 }
 
 /**
@@ -201,8 +201,8 @@ export const Color = {
  * @enum {number}
  */
 export const RenderingMode = {
-  Ascii: 1,
-  Tile:  2,
+  Ascii: 0,
+  Tile:  1,
 }
 
 export {};
