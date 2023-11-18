@@ -7,8 +7,6 @@
 
 "use strict";
 
-import { Monster } from "./archetypes/monster";
-import { Player } from "./archetypes/player";
 import { EntityType } from "./types";
 
 /**
@@ -29,16 +27,11 @@ export class EntityManager {
     let types = Object.values(EntityType);
 
     /** @type {Array.<Array.<object>>} */
-    this.data = Array(types.length);
+    this.data = new Array(types.length);
 
-    // Initialize data pool by creating objects of each type.
+    // Each archetype is stored in its own array indexed by type.
     for (let i = 0; i < types.length; ++i) {
-      this.data[0xFF - types[i]] = Array(EntityManager.poolSizeFrom(types[i]));
-      for (let j = 0; j < EntityManager.poolSizeFrom(types[i]); ++j) {
-        this.data[0xFF - types[i]][j] = new EntityManager.classFrom(types[i])(
-          EntityManager.createID(types[i], j) 
-        );
-      }
+      this.data[0xFF - types[i]] = [];
     }
   }
 
@@ -48,36 +41,6 @@ export class EntityManager {
    */
   static from(json) {
     return Object.assign(new EntityManager(), json);
-  }
-
-  /**
-   * Match entity type to pool size.
-   * @param {EntityType} type - An entity type enum.
-   * @returns {number}
-   */
-  static poolSizeFrom(type) {
-    switch(type) {
-      case EntityType.Player:
-        return 1;
-      default:
-        return 256;
-    }
-  }
-
-  /**
-   * Match entity type to class.
-   * @param {EntityType} type - An entity type enum.
-   * @returns {object}
-   */
-  static classFrom(type) {
-    switch(type) {
-      case EntityType.Player:
-        return Player;
-      case EntityType.Monster:
-        return Monster;
-      default:
-        return Monster;
-    }
   }
 
   /**

@@ -17,8 +17,6 @@ export class Player {
    * @returns {Player}
    */
   constructor(id) {
-    this.free = true;
-
     this.id = id;
     this.tile = Tile.Player;
     this.position = {x:0, y:0};

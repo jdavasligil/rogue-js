@@ -17,8 +17,6 @@ export class Monster {
    * @returns {Monster}
    */
   constructor(id) {
-    this.free = true;
-
     this.id = id;
     this.tile = Tile.Monster;
     this.position = {x:0, y:0};
@@ -37,6 +35,8 @@ export class Monster {
     this.experience = 0;
     this.lootTable = 0;
 
+    this.abilities = [];
+    this.spells = [];
     this.speed = 24;
     this.saves = {
       death:     14,
