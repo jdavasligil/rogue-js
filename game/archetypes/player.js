@@ -40,17 +40,33 @@ export class Player {
     this.orientation = Direction.Up;
     this.ancestry = ancestry;
     this.combatClass = combatClass;
+    this.title = "";
+    this.backstory = "";
     this.primeRequisite = primeRequisite;
     this.alignment = 0;
     this.level = 1;
     this.experience = 0;
-    this.gold = gold;
-    this.weight = 0; // Weight measured in coins
+    this.coins = {
+      platinum: 0,
+      gold: gold,
+      electrum: 0,
+      silver: 0,
+      copper: 0,
+    };
+    this.weight = 0; // Weight measured in coins [cn], max = 1600cn
     this.inventory = [];
-    this.equipment = [];
+    this.equipment = {
+      mainHand: null,
+      offHand: null,
+      armour: null,
+      ammunition: null,
+    };
     this.languages = [];
+    this.abilities = [];
+    this.spells = [];
+    this.skills = [];
     this.speed = 24; // Squares per turn (10 game-minutes)
-    this.stats = {
+    this.scores = {
       str: 10,
       dex: 10,
       con: 10,
@@ -77,7 +93,6 @@ export class Player {
     this.armorClass = 9; // Lower is better!
     this.maxArmorClass = 9;
     this.attackBonus = 0;
-    this.damageDice = {n: 1, d: 3};
   }
 
   /**
