@@ -91,6 +91,10 @@ export class ChunkManager {
   // A temporary position store used during pruning that reduces overhead.
   static positionStore = {x: 0, y: 0};
 
+  // A temporary chunk store used during pruning that reduces overhead.
+  // Holds outgoing chunks to be serialized.
+  static chunkStore = [];
+
   // Chunks further than this (square / L-Inf) grid distance will be pruned
   // distance > 2 otherwise cache will delete adjacent values
   // larger values tradeoff space O(n^2) for performance
@@ -221,6 +225,8 @@ export class ChunkManager {
 
         break;
     }
+
+    this.pruneCache();
   }
 
   /**
@@ -230,6 +236,7 @@ export class ChunkManager {
     for (const key of Object.keys(this.cache)) {
       Object.assign(ChunkManager.positionStore, parsePosition(key));
       if (distance2DLInf(ChunkManager.positionStore, this.root.position) > ChunkManager.pruneDistance) {
+        ChunkManager.chunkStore.push(this.cache[key]);
         delete this.cache[key];
       }
     }
