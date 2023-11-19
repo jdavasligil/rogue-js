@@ -40,6 +40,7 @@ export class Chunk {
   /**
    * Deserialize from JSON.
    * @param {object} json - JSON object.
+   * @returns {Chunk}
    */
   static from(json) {
     return new Chunk(json.position,
@@ -225,12 +226,11 @@ export class ChunkManager {
 
         break;
     }
-
-    this.pruneCache();
   }
 
   /**
    * Prevent the cache from becoming too large by pruning values far from root.
+   * @returns {Array.<Chunk>}
    */
   pruneCache() {
     for (const key of Object.keys(this.cache)) {
@@ -240,5 +240,6 @@ export class ChunkManager {
         delete this.cache[key];
       }
     }
+    return ChunkManager.chunkStore;
   }
 }
