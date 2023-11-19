@@ -1,12 +1,11 @@
 "use strict";
 
+import { Monster } from "./game/archetypes/monster.js";
 import { Player } from "./game/archetypes/player.js";
 import { Chunk, ChunkManager } from "./game/chunk-manager.js";
 import { EntityManager } from "./game/entity-manager.js";
-import { Cardinal } from "./game/types.js";
+import { Cardinal, EntityType } from "./game/types.js";
 import { RingBuffer } from "./lib/ring-buffer.js";
-
-//const T = require("./game/types.js");
 
 // Get DOM elements and context
 const canvas = document.getElementById("game-canvas");
@@ -14,21 +13,21 @@ const text = document.getElementById("game-text");
 const bgArt = document.getElementById("bg-art");
 const ctx = canvas.getContext("2d");
 
-let ev = new RingBuffer;
-function testEnttityManager() {
-  let em = new EntityManager();
-  em.insert(new Player());
-  em.insert(new Monster());
-  em.insert(new Monster());
-  em.insert(new Monster());
-  em.insert(new Monster());
-  em.insert(new Monster());
+const ev = new RingBuffer();
+function testEntityManager() {
+  const em = new EntityManager();
+  const pid = em.insert(new Player());
+  const mid1 = em.insert(new Monster());
+  const mid2 = em.insert(new Monster());
+  const mid3 = em.insert(new Monster());
 
-  console.log(em.data);
+  const em2 = EntityManager.from(JSON.parse(JSON.stringify(em)));
+  console.log(em);
+  console.log(em2);
 }
 
 function testChunkManager() {
-  let cm = new ChunkManager;
+  let cm = new ChunkManager();
     /**
       * @param {ChunkManager} cm
       */
@@ -49,14 +48,21 @@ function testChunkManager() {
       console.log(outstr);
     }
 
-  logChunkManager(cm);
-  console.log(JSON.stringify(cm.cache));
+  //logChunkManager(cm);
+  //console.log(JSON.stringify(cm.cache));
 
   cm.reroot(Cardinal.N, new Chunk({x:-16,y:-32}), new Chunk({x:0,y:-32}), new Chunk({x:16,y:-32}));
 
-  logChunkManager(cm);
-  console.log(Object.keys(cm.cache));
+  //logChunkManager(cm);
+  //console.log(Object.keys(cm.cache));
 
   cm.reroot(Cardinal.S, cm.cache['{"x":-16,"y":16}'], cm.cache['{"x":0,"y":16}'], cm.cache['{"x":16,"y":16}']);
-  logChunkManager(cm);
+  //logChunkManager(cm);
+
+  const cm2 = ChunkManager.from(JSON.parse(JSON.stringify(cm)));
+  console.log(cm);
+  console.log(cm2);
 }
+
+//testEntityManager();
+testChunkManager();

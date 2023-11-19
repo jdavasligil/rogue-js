@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { EntityType } from "./types";
+import { EntityType } from "./types.js";
 
 /**
  * An entity ID is a 32 bit unsigned integer where the leftmost 8 bits
@@ -48,6 +48,7 @@ export class EntityManager {
   /**
    * Deserialize from JSON.
    * @param {object} json - JSON object.
+   * @returns {EntityManager}
    */
   static from(json) {
     return Object.assign(new EntityManager(), json);
@@ -68,7 +69,7 @@ export class EntityManager {
    * @returns {EntityType}
    */
   static getIDType(id) {
-    return 0xFF - ((id & (0xFF << 24)) >>> 24);
+    return (0xFF - ((id & (0xFF << 24)) >>> 24));
   }
 
   /**

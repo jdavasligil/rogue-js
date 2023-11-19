@@ -12,13 +12,11 @@ import { distance2DLInf } from "../lib/game-math.js";
 import { parsePosition } from "../lib/serde.js";
 import { Cardinal } from "./types.js";
 
-//const T = require("./types.js");
-
 /** A Chunk is a 16x16 sub-array of the world map used for data streaming. */
 export class Chunk {
   /**
    * Create a Chunk.
-   * @param {T.Position} position - The world position of the chunk.
+   * @param {Position} position - The world position of the chunk.
    * @param {TileGrid | undefined} tileGrid - Optional tile grid.
    * @param {BitGrid | undefined} visGrid - Optional visibility bit grid.
    * @param {BitGrid | undefined} colGrid - Optional collision bit grid.
@@ -101,6 +99,7 @@ export class ChunkManager {
   /**
    * Deserialize from JSON.
    * @param {object} json - JSON object.
+   * @returns {ChunkManager}
    */
   static from(json) {
     let deCache = {};
@@ -123,7 +122,7 @@ export class ChunkManager {
    * Reroot the tree based on the given cardinal direction.
    * Triggered by an event when the player moves past the root boundary.
    * Called when new chunk data is loaded.
-   * @param {T.Cardinal} cardinal - A cardinal direction.
+   * @param {Cardinal} cardinal - A cardinal direction.
    * @param {Chunk} topChunk - Top / left most chunk.
    * @param {Chunk} midChunk - Middle chunk.
    * @param {Chunk} bottomChunk - Bottom / right most chunk.

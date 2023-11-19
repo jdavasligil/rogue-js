@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { Direction, EntityType, Tile } from "../types";
+import { Direction, EntityType, Tile } from "../types.js";
 
 /** Data class representing monster data */
 export class Monster {
@@ -16,7 +16,7 @@ export class Monster {
    * @returns {Monster}
    */
   constructor() {
-    this.id = (EntityType.Monster << 24);
+    this.id = (0xFF - EntityType.Monster) << 24;
     this.tile = Tile.Monster;
     this.position = {x:0, y:0};
     this.orientation = Direction.Up;

@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { Direction, EntityType, Literacy, Tile } from "../types";
+import { Direction, EntityType, Literacy, Tile } from "../types.js";
 
 /** Data class representing player data */
 export class Player {
