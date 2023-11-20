@@ -20,17 +20,13 @@ import { Tile } from "./types";
 //      d) Entity diffs are applied.
 //      e) Collision and light are calculated like usual, game continues.
 //
-// LOCALSTORAGE
-// CHUNK
-// key: "[U]_[V]"
-// val: "[Xchunk]_[Ychunk]-[ID]; ... \n[Xchunk]_[Ychunk]-[KEY:VAL]; ..."
 //
 // CHARACTER
 // key: "PC"
 // val: "[DATA(SEED+DEPTH)]"
 
 /** Class holding the underlying world template. */ 
-class World {
+export class World {
   /**
    * Create a world template stored using object reference.
    * @returns {World}
@@ -68,7 +64,7 @@ class World {
   }
   
   /**
-   * Insert a tile into the specified location (overwrite existing).
+   * Look up a tile at the specified location.
    * @param {number} x_w - x-coordinate in world coordinates. 
    * @param {number} x_w - y-coordinate in world coordinates. 
    * @returns {Tile}

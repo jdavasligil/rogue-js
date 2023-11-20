@@ -7,47 +7,63 @@
 
 "use strict";
 
+import { GAMMA2 } from "../lib/gamma.js";
+import { SERDE } from "../lib/serde.js";
 import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
-import { distance2DLInf } from "../lib/game-math.js";
-import { parsePosition, stringifyPosition } from "../lib/serde.js";
-import { Cardinal } from "./types.js";
+import { World } from "./map-generation.js";
+
+// LOCAL STORAGE FORMATS
+/**
+ * @typedef {string} ChunkString - Key format: `{DEPTH<0x>}_{U<0x>}_{V<0x>}`
+ */
+/**
+ * @typedef {string} ChunkDiff - Val format: `{u<0x>},{v<0x>}:{TILE<0x>};...`
+ */
+/**
+ * @typedef {string} EntityDiff - Val format: `{u<0x>},{v<0x>}:{DATA};...`
+ */
 
 /** A Chunk is a 16x16 sub-array of the world map used for data streaming. */
 export class Chunk {
   /**
    * Create a Chunk.
-   * @param {Position} position - The world position of the chunk.
-   * @param {TileGrid | undefined} tileGrid - Optional tile grid.
-   * @param {BitGrid | undefined} visGrid - Optional visibility bit grid.
-   * @param {BitGrid | undefined} colGrid - Optional collision bit grid.
-   * @param {IDGrid | undefined} idGrid - Optional ID grid.
+   * @param {TileGrid} tileGrid - Tile grid.
+   * @param {BitGrid} visGrid - Visibility bit grid.
+   * @param {BitGrid} colGrid - Collision bit grid.
+   * @param {IDGrid} idGrid - ID grid.
    * @returns {Chunk}
    */
-  constructor(position={x:0, y:0},
-              tileGrid=undefined,
-              visGrid=undefined,
-              colGrid=undefined,
-              idGrid=undefined) {
-    this.position = position;
-    this.tileGrid = (tileGrid) ? tileGrid : new TileGrid(Chunk.size); 
-    this.visGrid  = (visGrid)  ? visGrid  : new BitGrid(Chunk.size); 
-    this.colGrid  = (colGrid)  ? colGrid  : new BitGrid(Chunk.size); 
-    this.idGrid   = (idGrid)   ? idGrid   : new IDGrid(Chunk.size); 
+  constructor() {
+    this.tileGrid = new TileGrid(Chunk.size); 
+    this.visGrid  = new BitGrid(Chunk.size); 
+    this.colGrid  = new BitGrid(Chunk.size); 
+    this.idGrid   = new IDGrid(Chunk.size); 
   }
 
   static get size() { return 16; }
 
   /**
-   * Deserialize from JSON.
-   * @param {object} json - JSON object.
-   * @returns {Chunk}
+   * Convert world coordinate position to chunk UV coordinate space.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @returns {import("./types.js").Position}
    */
-  static from(json) {
-    return new Chunk(json.position,
-                     TileGrid.from(json.tileGrid),
-                     BitGrid.from(json.visGrid),
-                     BitGrid.from(json.colGrid),
-                     IDGrid.from(json.idGrid));
+  static worldToUV(position) {
+    return {
+      x: Math.floor(position.x / Chunk.size),
+      y: Math.floor(position.y / Chunk.size)
+    };
+  }
+
+  /**
+   * Convert UV space to world space.
+   * @param {import("./types.js").Position} position - UV coordinate.
+   * @returns {import("./types.js").Position}
+   */
+  static UVToWorld(position) {
+    return {
+      x: position.x * Chunk.size,
+      y: position.y * Chunk.size
+    };
   }
 }
 
@@ -55,191 +71,111 @@ export class Chunk {
 export class ChunkManager {
   /**
    * Create a new ChunkManager.
+   * @param {import("./types.js").Position} position - UV Position of the occupied chunk.
+   * @param {number} width - Width of the UV space (u < width).
+   * @param {number} height - Height of the UV space (v < height).
+   * @param {number} distance - UV distance (L∞) to render chunks (O(d^2) chunks).
    * @returns {ChunkManager}
-   * @params {Object.<string, Chunk>} cache - A map from position -> chunk.
-   * @params {Chunk | undefined} root - The chunk containing the player.
-   * @params {Chunk | undefined} N    - The chunk north of the player.
-   * @params {Chunk | undefined} NE   - The chunk northeast of the player.
-   * @params {Chunk | undefined} E    - The chunk east of the player.
-   * @params {Chunk | undefined} SE   - The chunk southeast of the player.
-   * @params {Chunk | undefined} S    - The chunk south of  the player.
-   * @params {Chunk | undefined} SW   - The chunk southwest of the player.
-   * @params {Chunk | undefined} W    - The chunk west of the player.
-   * @params {Chunk | undefined} NW   - The chunk northwest of the player.
    */
-  constructor(cache={},
-              root=undefined,
-              N=undefined,
-              NE=undefined,
-              E=undefined,
-              SE=undefined,
-              S=undefined,
-              SW=undefined,
-              W=undefined,
-              NW=undefined) {
-    this.cache = cache;
-    this.root  = (root) ? root : new Chunk({x: 0,           y: 0});
-    this.N     = (N)    ? N    : new Chunk({x: 0,           y: -Chunk.size});
-    this.NE    = (NE)   ? NE   : new Chunk({x: Chunk.size,  y: -Chunk.size});
-    this.E     = (E)    ? E    : new Chunk({x: Chunk.size,  y: 0});
-    this.SE    = (SE)   ? SE   : new Chunk({x: Chunk.size,  y: Chunk.size});
-    this.S     = (S)    ? SE   : new Chunk({x: 0,           y: Chunk.size});
-    this.SW    = (SW)   ? SW   : new Chunk({x: -Chunk.size, y: Chunk.size});
-    this.W     = (W)    ? W    : new Chunk({x: -Chunk.size, y: 0});
-    this.NW    = (NW)   ? NW   : new Chunk({x: -Chunk.size, y: -Chunk.size});
+  constructor(position, width, height, distance) {
+    this.position = position;
+    this.width = width;
+    this.height = height;
+    this.distance = GAMMA2.clamp(distance, 1, 8);
+    this.maxChunks = 1 + 4 * (distance * (distance + 1));
+
+    /**
+     * Chunk map keeps track of chunks currently being managed.
+     * It maps UV-coord of chunk to its index in the buffer.
+     * @type {Object.<import("./types.js").Position, number>}
+     */
+    this.chunkMap = {};
+    /** @type {Array.<Chunk>} */
+    this.chunkBuffer = [];
+    /** @type {Array.<number>} */
+    this.bin = []; // Indices of free chunks.
+    /** @type {Object.<string, string>} */
+    this.diffCache = {};
+
+    // Initialize Chunk Buffer
+    for (let i = 0; i < this.maxChunks; ++i) {
+      this.chunkBuffer.push(new Chunk());
+      this.bin.push(this.maxChunks - 1 - i);
+    }
   }
 
   // A temporary position store used during pruning that reduces overhead.
   static positionStore = {x: 0, y: 0};
 
-  // A temporary chunk store used during pruning that reduces overhead.
-  // Holds outgoing chunks to be serialized.
-  static chunkStore = [];
-
-  // Chunks further than this (square / L-Inf) grid distance will be pruned
-  // distance > 2 otherwise cache will delete adjacent values
-  // larger values tradeoff space O(n^2) for performance
-  static get pruneDistance() { return 5; }
-
   /**
-   * Deserialize from JSON.
-   * @param {object} json - JSON object.
-   * @returns {ChunkManager}
+   * Returns true if a chunk is already loaded for the given position.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @returns {boolean}
    */
-  static from(json) {
-    let deCache = {};
-    for (const [key, value] of Object.entries(json.cache)) {
-      deCache[key] = Chunk.from(value);
-    }
-    return new ChunkManager(deCache,
-                            Chunk.from(json.root),
-                            Chunk.from(json.N),
-                            Chunk.from(json.NE),
-                            Chunk.from(json.E),
-                            Chunk.from(json.SE),
-                            Chunk.from(json.S),
-                            Chunk.from(json.SW),
-                            Chunk.from(json.W),
-                            Chunk.from(json.NW));
+  loaded(position) {
+    return (this.chunkMap[SERDE.posToStr(position)] !== undefined);
   }
 
   /**
-   * Reroot the tree based on the given cardinal direction.
-   * Triggered by an event when the player moves past the root boundary.
-   * Called when new chunk data is loaded.
-   * @param {Cardinal} cardinal - A cardinal direction.
-   * @param {Chunk} topChunk - Top / left most chunk.
-   * @param {Chunk} midChunk - Middle chunk.
-   * @param {Chunk} bottomChunk - Bottom / right most chunk.
+   * Returns true if any chunks are available.
+   * @returns {boolean}
    */
-  reroot(cardinal, topChunk, midChunk, bottomChunk) {
-    switch(cardinal) {
-      case Cardinal.N:
-        // 1. Cache the chunks going out of range
-        this.cache[stringifyPosition(this.SW.position)] = this.SW;
-        this.cache[stringifyPosition(this.S.position)] = this.S;
-        this.cache[stringifyPosition(this.SE.position)] = this.SE;
-
-        // 2. Shift chunks that were cached
-        this.SW = this.W;
-        this.S = this.root;
-        this.SE = this.E;
-
-        // 3. Shift root chunk
-        this.W = this.NW;
-        this.root = this.N;
-        this.E = this.NE;
-
-        // 4. Assign new chunks
-        this.NW = topChunk;
-        this.N = midChunk;
-        this.NE = bottomChunk;
-
-        break;
-
-      case Cardinal.E:
-        // 1. Cache the chunks going out of range
-        this.cache[stringifyPosition(this.NW.position)] = this.NW;
-        this.cache[stringifyPosition(this.W.position)] = this.W;
-        this.cache[stringifyPosition(this.SW.position)] = this.SW;
-
-        // 2. Shift chunks that were cached
-        this.NW = this.N;
-        this.W = this.root;
-        this.SW = this.S;
-
-        // 3. Shift root chunk
-        this.N = this.NE;
-        this.root = this.E;
-        this.S = this.SE;
-
-        // 4. Assign new chunks
-        this.NE = topChunk;
-        this.E = midChunk;
-        this.SE = bottomChunk;
-
-        break;
-
-      case Cardinal.S:
-        // 1. Cache the chunks going out of range
-        this.cache[stringifyPosition(this.NW.position)] = this.NW;
-        this.cache[stringifyPosition(this.N.position)] = this.N;
-        this.cache[stringifyPosition(this.NE.position)] = this.NE;
-
-        // 2. Shift chunks that were cached
-        this.NW = this.W;
-        this.N = this.root;
-        this.NE = this.E;
-
-        // 3. Shift root chunk
-        this.W = this.SW;
-        this.root = this.S;
-        this.E = this.SE;
- 
-        // 4. Assign new chunks
-        this.SW = topChunk;
-        this.S = midChunk;
-        this.SE = bottomChunk;
-
-        break;
-
-      case Cardinal.W:
-        // 1. Cache the chunks going out of range
-        this.cache[stringifyPosition(this.NE.position)] = this.NE;
-        this.cache[stringifyPosition(this.E.position)] = this.E;
-        this.cache[stringifyPosition(this.SE.position)] = this.SE;
-
-        // 2. Shift chunks that were cached
-        this.NE = this.N;
-        this.E = this.root;
-        this.SE = this.S;
-
-        // 3. Shift root chunk
-        this.N = this.NW;
-        this.root = this.W;
-        this.S = this.SW;
- 
-        // 4. Assign new chunks
-        this.NW = topChunk;
-        this.W = midChunk;
-        this.SW = bottomChunk;
-
-        break;
-    }
+  chunksAvailable() {
+    return this.bin.length > 0;
   }
 
   /**
-   * Prevent the cache from becoming too large by pruning values far from root.
-   * @returns {Array.<Chunk>}
+   * Returns true if UV coordinate is in bounds.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @returns {boolean}
    */
-  pruneCache() {
-    for (const key of Object.keys(this.cache)) {
-      Object.assign(ChunkManager.positionStore, parsePosition(key));
-      if (distance2DLInf(ChunkManager.positionStore, this.root.position) > ChunkManager.pruneDistance) {
-        ChunkManager.chunkStore.push(this.cache[key]);
-        delete this.cache[key];
+  inBounds(position) {
+    return (
+         (0 <= position.x)
+      && (0 <= position.y)
+      && (position.x < this.width)
+      && (position.y < this.height) 
+    );
+  }
+
+  /**
+   * Initialize a chunk by copying data from the underlying world.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @param {World} world - Reference to the underlying world template.
+   * @returns {import("./types.js").Position | undefined}
+   */
+  initChunk(position, world) {
+    // Guard clause to ensure proper state.
+    if (
+         !this.chunksAvailable()
+      ||  this.loaded(position)
+      || !this.inBounds(position)
+    ) {
+      return position;
+    }
+
+    // Obtain free chunk index.
+    let idx = this.bin.pop();
+
+    // Map chunk position to index for fast lookup.
+    this.chunkMap[SERDE.posToStr(position)] = idx;
+
+    // Obtain reference to chunk in buffer.
+    let chunk = this.chunkBuffer[idx];
+    let worldPos = Chunk.UVToWorld(position);
+
+    // Copy world tiles to chunk.
+    for (let y = 0; y < Chunk.size; ++y) {
+      for (let x = 0; x < Chunk.size; ++x) {
+        chunk.tileGrid.setTile(
+          {x: x, y: y},
+          world.lookup(worldPos.x + x, worldPos.y + y)
+        );
       }
     }
-    return ChunkManager.chunkStore;
+
+    return undefined;
   }
+
+  // TODO: Handle loading / unloading of DIFFS
 }

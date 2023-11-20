@@ -13,37 +13,6 @@ import { EntityManager } from "./entity-manager.js"
  */
 
 /**
- * Properties common to all entities.
- * @typedef Entity 
- * @property {number} id - Entity's unique ID.
- * @property {EntityType} type - Entity archetype.
- * @property {string} name - Entity name.
- * @property {Position} position - Entity position.
- * @property {boolean} collision - Physical collision.
- * @property {boolean} visible - Visible or invisible.
- * @property {object} data - Additional data depending on the type.
- */
-
-/**
- * The World holds all game state.
- * @typedef World
- * @type {object}
- * @property {ChunkManager} chunks - An octree holding per-chunk data buffers.
- * @property {EntityManager} entities - A map to access entity data.
- * @property {Array.<Event>} events - An array for event signals for state change.
- * @property {Camera} camera - The top-down camera which renders the world.
- * @property {RenderingMode} renderer - How to draw the grid.
- * @property {number} width - Width of the world map.
- * @property {number} height - Height of the world map.
- * @property {number} turns - How many turns have passed (1 turn = 10 min).
- * @property {GameState} state - What state the game is currently in.
- * @property {Array.<MainMenuOption>} options - Main menu options available.
- * @property {number} selection - Current option menu selection.
- * @property {boolean} saveFileExists - True when save loaded from local storage.
- * @property {boolean} debug - Activates debugging features.
- */
-
-/**
  * Enumeration of all event signals. This includes FSM transitions.
  * @enum {number}
  */
