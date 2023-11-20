@@ -8,7 +8,7 @@
 "use strict";
 
 import { mulberry32 } from "../lib/fast-random";
-import { stringifyPosition } from "../lib/serde";
+import { Chunk } from "./chunk-manager";
 import { Tile } from "./types";
 
 // 1. Generate large tilemap.
@@ -22,16 +22,12 @@ import { Tile } from "./types";
 //
 // LOCALSTORAGE
 // CHUNK
-// key: "[Xworld]_[Yworld]"
+// key: "[U]_[V]"
 // val: "[Xchunk]_[Ychunk]-[ID]; ... \n[Xchunk]_[Ychunk]-[KEY:VAL]; ..."
-//
-// MAP
-// key: "L[DEPTH]"
-// val: "[SEED]"
 //
 // CHARACTER
 // key: "PC"
-// val: "[DATA]"
+// val: "[DATA(SEED+DEPTH)]"
 
 /** Class holding the underlying world template. */ 
 class World {
@@ -44,13 +40,22 @@ class World {
     this.depth = depth; // Zero is surface, positive numbers are lower levels.
     this.defaultTile = Tile.Floor;
     this.tiles = {};
-    this.XMAX = 0; // Multiple of 16
-    this.YMAX = 0;
-    this.origin = {x: 0, y: 0};
+    this.width = 0;
+    this.height = 0;
   }
 
   /** A storage variable for holding tiles temporarily. */
   static tileStore = 0;
+
+  /**
+   * Convert a coordinate pair to a unique hash string.
+   * @param {number} x - Local map x-coordinate.
+   * @param {number} y - Local map y-coordinate.
+   * @return {string}
+   */
+  static coordToString(x, y) {
+    return `${x.toString(16)},${y.toString(16)}`;
+  }
 
   /**
    * Insert a tile into the specified location (overwrite existing).
@@ -58,17 +63,20 @@ class World {
    * @param {number} x - Local map x-coordinate.
    * @param {number} y - Local map y-coordinate.
    */
-  insert(tile, row, col) {
-    this.tiles[`${row.toString(16)},${col.toString(16)}`] = tile;
+  insert(tile, x, y) {
+    this.tiles[World.coordToString(x, y)] = tile;
   }
   
   /**
    * Insert a tile into the specified location (overwrite existing).
-   * @param {import("./types").Position} position - Position in world coordinates. 
+   * @param {number} x_w - x-coordinate in world coordinates. 
+   * @param {number} x_w - y-coordinate in world coordinates. 
    * @returns {Tile}
    */
-  lookup(position) {
-    World.tileStore = this.tiles[stringifyPosition(position)];
+  lookup(x_w, y_w) {
+    World.tileStore = this.tiles[
+      World.coordToString((this.origin.x - x_w), (this.origin.y - y_w))
+    ];
     if (World.tileStore === undefined) {
       return this.defaultTile;
     }
@@ -77,18 +85,30 @@ class World {
 
   /**
    * Town generation algorithm.
+   * @returns {import("./types").Position} spawn - Character spawn location.
    */
   generateTown() {
     this.zeroTile = Tile.Floor;
-    this.YMAX = 64;
-    this.XMAX = 96;
-    this.origin.x = this.XMAX / 2;
-    this.origin.y = this.YMAX / 2;
+    this.height = 2 * Chunk.size;
+    this.width = 3 * Chunk.size;
 
+    //let rng = mulberry32(this.seed);
+    let spawn = {x: this.width / 2, y: this.height / 2};
     let i = 0;
 
     // Create Walls
-    for (i = 0; i < XMAX; ++i) {
+    for (i = 0; i < this.width; ++i) {
+      this.insert(Tile.Wall, i, 0);
+      this.insert(Tile.Wall, i, this.height - 1);
     }
+    for (i = 1; i < (this.height - 1); ++i) {
+      this.insert(Tile.Wall, 0, i);
+      this.insert(Tile.Wall, this.width - 1, i);
+    }
+
+    // Create Spawn Point
+    insert(Tile.Player, spawn.x, spawn.y);
+
+    return spawn;
   }
 }
