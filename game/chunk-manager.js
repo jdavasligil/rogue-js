@@ -9,7 +9,7 @@
 
 import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
 import { distance2DLInf } from "../lib/game-math.js";
-import { parsePosition } from "../lib/serde.js";
+import { parsePosition, stringifyPosition } from "../lib/serde.js";
 import { Cardinal } from "./types.js";
 
 /** A Chunk is a 16x16 sub-array of the world map used for data streaming. */
@@ -136,9 +136,9 @@ export class ChunkManager {
     switch(cardinal) {
       case Cardinal.N:
         // 1. Cache the chunks going out of range
-        this.cache[JSON.stringify(this.SW.position)] = this.SW;
-        this.cache[JSON.stringify(this.S.position)] = this.S;
-        this.cache[JSON.stringify(this.SE.position)] = this.SE;
+        this.cache[stringifyPosition(this.SW.position)] = this.SW;
+        this.cache[stringifyPosition(this.S.position)] = this.S;
+        this.cache[stringifyPosition(this.SE.position)] = this.SE;
 
         // 2. Shift chunks that were cached
         this.SW = this.W;
@@ -159,9 +159,9 @@ export class ChunkManager {
 
       case Cardinal.E:
         // 1. Cache the chunks going out of range
-        this.cache[JSON.stringify(this.NW.position)] = this.NW;
-        this.cache[JSON.stringify(this.W.position)] = this.W;
-        this.cache[JSON.stringify(this.SW.position)] = this.SW;
+        this.cache[stringifyPosition(this.NW.position)] = this.NW;
+        this.cache[stringifyPosition(this.W.position)] = this.W;
+        this.cache[stringifyPosition(this.SW.position)] = this.SW;
 
         // 2. Shift chunks that were cached
         this.NW = this.N;
@@ -182,9 +182,9 @@ export class ChunkManager {
 
       case Cardinal.S:
         // 1. Cache the chunks going out of range
-        this.cache[JSON.stringify(this.NW.position)] = this.NW;
-        this.cache[JSON.stringify(this.N.position)] = this.N;
-        this.cache[JSON.stringify(this.NE.position)] = this.NE;
+        this.cache[stringifyPosition(this.NW.position)] = this.NW;
+        this.cache[stringifyPosition(this.N.position)] = this.N;
+        this.cache[stringifyPosition(this.NE.position)] = this.NE;
 
         // 2. Shift chunks that were cached
         this.NW = this.W;
@@ -205,9 +205,9 @@ export class ChunkManager {
 
       case Cardinal.W:
         // 1. Cache the chunks going out of range
-        this.cache[JSON.stringify(this.NE.position)] = this.NE;
-        this.cache[JSON.stringify(this.E.position)] = this.E;
-        this.cache[JSON.stringify(this.SE.position)] = this.SE;
+        this.cache[stringifyPosition(this.NE.position)] = this.NE;
+        this.cache[stringifyPosition(this.E.position)] = this.E;
+        this.cache[stringifyPosition(this.SE.position)] = this.SE;
 
         // 2. Shift chunks that were cached
         this.NE = this.N;
