@@ -5,7 +5,7 @@
  * @package
  */
 
-import { Color, Tile } from "./types";
+import { Color, Tile } from "./types.js";
 
 /**
  * Used by renderer in ASCII mode to match default tile colors.

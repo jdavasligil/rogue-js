@@ -110,17 +110,17 @@ export class Chunk {
 export class ChunkManager {
   /**
    * Create a new ChunkManager.
-   * @param {import("./types.js").Position} position - UV Position of the occupied chunk.
-   * @param {number} width - Width of the UV space (u < width).
-   * @param {number} height - Height of the UV space (v < height).
+   * @param {import("./types.js").Position} position - World position of player (stored as UV).
+   * @param {number} width - World width (stored as UV).
+   * @param {number} height - World height (stored as UV).
    * @param {number} distance - UV distance (L∞) to render chunks (O(d^2) chunks).
    * @returns {ChunkManager}
    */
   constructor(position, width, height, distance) {
-    this.position = position;
-    this.playerPosition = position;
-    this.width = width;
-    this.height = height;
+    this.position = Chunk.worldToUV(position);
+    this.playerPosition = Chunk.worldToUV(position);
+    this.width = Math.floor(width / Chunk.size);
+    this.height = Math.floor(height / Chunk.size);
     this.distance = GAMMA2.clamp(distance, 1, 8);
     this.maxChunks = 1 + 4 * (distance * (distance + 1));
 
@@ -353,14 +353,15 @@ export class ChunkManager {
   }
 
   /**
-   * Initialize a chunk by copying data from the underlying world.
+   * Given the position of the player, update all chunks if necessary.
    * @param {import("./types.js").Position} position - Player world position.
    * @param {World} world - Reference to the underlying world template.
+   * @param {boolean} force - Whether or not to force an update to occur.
    * @returns {undefined}
    */
-  update(position, world) {
+  update(position, world, force=false) {
     this.playerPosition = Chunk.worldToUV(position);
-    if (this.playerPosition === this.position) {
+    if ((this.playerPosition === this.position) && !force) {
       return undefined;
     }
 
@@ -375,9 +376,7 @@ export class ChunkManager {
     // Load any chunks that need to be loaded.
     for (let v = (this.playerPosition.y - this.distance); v <= (this.playerPosition.y + this.distance); ++v) {
         for (let u = (this.playerPosition.x - this.distance); u <= (this.playerPosition.x + this.distance); ++u) {
-      }
-      if (!this.loaded({x: u, y: v})) {
-        this.loadChunk({x: u, y: v}, world);
+          this.loadChunk({x: u, y: v}, world);
       }
     }
   }

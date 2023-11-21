@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { Tile } from "./types";
+import { Tile } from "./types.js";
 
 /**
  * Whether or not the tile has collision by default.

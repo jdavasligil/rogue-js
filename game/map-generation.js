@@ -7,9 +7,9 @@
 
 "use strict";
 
-import { mulberry32 } from "../lib/fast-random";
-import { Chunk } from "./chunk-manager";
-import { Tile } from "./types";
+import { mulberry32 } from "../lib/fast-random.js";
+import { Chunk } from "./chunk-manager.js";
+import { Tile } from "./types.js";
 
 // 1. Generate large tilemap.
 // 2. Player spawn is always (0,0).
@@ -70,9 +70,7 @@ export class World {
    * @returns {Tile}
    */
   lookup(x_w, y_w) {
-    World.tileStore = this.tiles[
-      World.coordToString((this.origin.x - x_w), (this.origin.y - y_w))
-    ];
+    World.tileStore = this.tiles[World.coordToString(x_w, y_w)];
     if (World.tileStore === undefined) {
       return this.defaultTile;
     }
@@ -84,7 +82,7 @@ export class World {
    * @returns {import("./types").Position} spawn - Character spawn location.
    */
   generateTown() {
-    this.zeroTile = Tile.Floor;
+    this.defaultTile = Tile.Floor;
     this.height = 2 * Chunk.size;
     this.width = 3 * Chunk.size;
 
@@ -103,7 +101,7 @@ export class World {
     }
 
     // Create Spawn Point
-    insert(Tile.Player, spawn.x, spawn.y);
+    this.insert(Tile.Player, spawn.x, spawn.y);
 
     return spawn;
   }
