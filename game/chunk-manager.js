@@ -13,6 +13,7 @@ import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
 import { World } from "./map-generation.js";
 import { hasCollision } from "./collision.js";
 import { mulberry32 } from "../lib/fast-random.js";
+import { Tile } from "./types.js";
 
 // LOCAL STORAGE FORMATS
 /**
@@ -93,6 +94,16 @@ export class Chunk {
    */
   static toChunkString(depth, position) {
     return `${depth.toString(16)}_${position.x.toString(16)}_${position.y.toString(16)}`;
+  }
+
+  /**
+   * Convert UV coord and tile to diff string.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @param {Tile} tile - Game tile.
+   * @returns {ChunkDiff}
+   */
+  static toChunkDiff(position, tile) {
+    return `${position.x.toString(16)},${position.y.toString(16)}:${tile.toString(16)}`;
   }
 }
 
@@ -187,13 +198,21 @@ export class ChunkManager {
   }
 
   /**
+   * Return a reference to a chunk in the buffer.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @returns {Chunk}
+   */
+  getChunk(position) {
+    return this.chunkBuffer[this.chunkMap[SERDE.posToStr(position)]];
+  }
+
+  /**
    * Initialize a chunk by copying data from the underlying world.
    * @param {import("./types.js").Position} position - UV Position.
    * @param {World} world - Reference to the underlying world template.
    * @returns {import("./types.js").Position | undefined}
    */
   loadChunk(position, world) {
-    // Guard clause to ensure proper state.
     if (
          !this.chunksAvailable()
       ||  this.loaded(position)
@@ -267,6 +286,39 @@ export class ChunkManager {
    * @returns {import("./types.js").Position | undefined}
    */
   unloadChunk(position, world) {
+    if (!this.loaded(position)) {
+      return position;
+    }
+
+    let idx = this.chunkMap[SERDE.posToStr(position)];
+    let chunk = this.chunkBuffer[idx];
+    let chunkDiffStr = "";
+    let worldTile = 0;
+    let tile = 0;
+
+    for (let y = 0; y < Chunk.size; ++y) {
+      for (let x = 0; x < Chunk.size; ++x) {
+
+        // Save chunk diffs.
+        worldTile = world.lookup(worldPos.x + x, worldPos.y + y);
+        tile = chunk.tileGrid.getTile({x: x, y: y});
+        if (tile !== worldTile) {
+          if (chunkDiffStr) chunkDiffStr += ';';
+          chunkDiffStr += Chunk.toChunkDiff({x: x, y: y}, tile);
+        }
+
+        // Handle entities?
+      }
+    }
+
+    // Save diffs to cache.
+    this.diffCache[Chunk.toChunkString(world.depth, position)] = chunkDiffStr;
+
+    // Unload chunk.
+    this.bin.push(idx);
+    this.chunkMap[SERDE.posToStr(position)] = undefined; // MEMORY LEAK?
+
+    return undefined;
   }
 
   /**
