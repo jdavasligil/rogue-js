@@ -27,6 +27,9 @@ import { mulberry32 } from "../lib/fast-random.js";
 /**
  * @typedef {string} DiffString - ChunkDiff + EntityDiff
  */
+/**
+ * @typedef {string} PositionString - format: `{x<0x>},{y<0x>}`
+ */
 
 /** A Chunk is a 16x16 sub-array of the world map used for data streaming. */
 export class Chunk {
@@ -175,6 +178,15 @@ export class ChunkManager {
   }
 
   /**
+   * Returns true if UV coordinate is within rendering distance.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @returns {boolean}
+   */
+  withinDistance(position) {
+    return GAMMA2.LInfNorm(this.playerPosition, position) <= this.distance;
+  }
+
+  /**
    * Initialize a chunk by copying data from the underlying world.
    * @param {import("./types.js").Position} position - UV Position.
    * @param {World} world - Reference to the underlying world template.
@@ -192,7 +204,7 @@ export class ChunkManager {
 
     // Obtain free chunk index.
     let idx = this.bin.pop();
-    idx = idx ? idx : 0;// TEMP
+//    idx = idx ? idx : 0;// TEMP
 
     // Map chunk position to index for fast lookup.
     this.chunkMap[SERDE.posToStr(position)] = idx;
@@ -249,6 +261,15 @@ export class ChunkManager {
   }
 
   /**
+   * Unload a chunk by storing diffs and cleaning up entities.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @param {World} world - Reference to the underlying world template.
+   * @returns {import("./types.js").Position | undefined}
+   */
+  unloadChunk(position, world) {
+  }
+
+  /**
    * Initialize a chunk by copying data from the underlying world.
    * @param {import("./types.js").Position} position - Player world position.
    * @param {World} world - Reference to the underlying world template.
@@ -259,9 +280,23 @@ export class ChunkManager {
     if (this.playerPosition === this.position) {
       return undefined;
     }
-    // Walk through UV coords of chunks that should be loaded in memory.
-    // Ignore chunks already mapped and stored.
-    // Unload any chunks loaded in that are out of bounds.
+
+    // Unload any chunks that are out of bounds.
+    let mapKeys = Object.keys(this.chunkMap);
+    for (let i = 0; i < mapKeys.length; ++i) {
+      if (!this.withinDistance(this.chunkMap[mapKeys[i]])) {
+        this.unloadChunk(SERDE.strToPos(mapKeys[i]), world);
+      }
+    }
+
+    // Load any chunks that need to be loaded.
+    for (let v = (this.playerPosition.y - this.distance); v <= (this.playerPosition.y + this.distance); ++v) {
+        for (let u = (this.playerPosition.x - this.distance); u <= (this.playerPosition.x + this.distance); ++u) {
+      }
+      if (!this.loaded({x: u, y: v})) {
+        this.loadChunk({x: u, y: v}, world);
+      }
+    }
   }
 
   // TODO: Handle loading / unloading of DIFFS
