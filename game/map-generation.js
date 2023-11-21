@@ -83,8 +83,8 @@ export class World {
    */
   generateTown() {
     this.defaultTile = Tile.Floor;
-    this.height = 2 * Chunk.size;
-    this.width = 3 * Chunk.size;
+    this.height = 8 * Chunk.size;
+    this.width = 8 * Chunk.size;
 
     //let rng = mulberry32(this.seed);
     let spawn = {x: this.width / 2, y: this.height / 2};

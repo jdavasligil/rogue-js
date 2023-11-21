@@ -248,10 +248,12 @@ export class ChunkManager {
     for (let y = 0; y < Chunk.size; ++y) {
       for (let x = 0; x < Chunk.size; ++x) {
         tile = world.lookup(worldPos.x + x, worldPos.y + y);
+
+        chunk.tileGrid.setTile({x: x, y: y}, tile);
+
         if (hasCollision(tile)) {
           chunk.colGrid.setBit({x: x, y: y})
         }
-        chunk.tileGrid.setTile({x: x, y: y}, tile);
       }
     }
 
@@ -314,6 +316,8 @@ export class ChunkManager {
     let chunk = this.chunkBuffer[idx];
     let chunkDiffStr = "";
     let entityDiffStr = "";
+
+    let worldPos = Chunk.UVToWorld(position);
     let worldTile = 0;
     let tile = 0;
     let entityID = 0;
@@ -339,8 +343,12 @@ export class ChunkManager {
     }
 
     // Cache diffs.
-    this.chunkDiffCache[Chunk.toChunkString(world.depth, position)] = chunkDiffStr;
-    this.entityDiffCache[Chunk.toChunkString(world.depth, position)] = entityDiffStr;
+    if (chunkDiffStr !== "") {
+      this.chunkDiffCache[Chunk.toChunkString(world.depth, position)] = chunkDiffStr;
+    }
+    if (entityDiffStr !== "") {
+      this.entityDiffCache[Chunk.toChunkString(world.depth, position)] = entityDiffStr;
+    }
 
     // Save diffs to Local Storage.
     window.localStorage.setItem(Chunk.toChunkString(world.depth, position), chunkDiffStr);

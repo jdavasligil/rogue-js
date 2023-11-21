@@ -28,11 +28,12 @@ function testEntityManager() {
 function testChunkManager() {
   let world = new World(1, 0);
   let spawn = world.generateTown();
+  let chunkRadius = 1;
 
   let em = new EntityManager();
   em.insert(new Player());
 
-  let cm = new ChunkManager(spawn, world.width, world.height, 2);
+  let cm = new ChunkManager(spawn, world.width, world.height, chunkRadius);
   console.log(cm.width);
   console.log(cm.height);
   cm.update(spawn, world, true);
@@ -40,6 +41,8 @@ function testChunkManager() {
   console.log(cm.getTile(spawn));
   console.log(cm.chunksAvailable());
   console.log(Object.keys(cm.chunkMap));
+  // Teleport to upper left corner.
+  cm.update({x: 1, y: 1}, world);
 }
 
 //testEntityManager();
