@@ -444,4 +444,40 @@ export class ChunkManager {
       y: position.y - chunkWorldCoord.y
     });
   }
+
+  /**
+   * Reset the chunk manager. Called on world change.
+   * @param {import("./types.js").Position} position - World position of player (stored as UV).
+   * @param {number} width - World width (stored as UV).
+   * @param {number} height - World height (stored as UV).
+   * @returns {undefined}
+   */
+  reset(position, width, height) {
+    this.position = Chunk.worldToUV(position);
+    this.width = Math.floor(width / Chunk.size);
+    this.height = Math.floor(height / Chunk.size);
+
+    // Clear Caches
+    let i = 0;
+    let cacheKeys = Object.keys(this.entityDiffCache);
+
+    for (i = 0; i < cacheKeys.length; ++i) {
+      delete this.entityDiffCache[cacheKeys[i]];
+    }
+
+    cacheKeys = Object.keys(this.chunkDiffCache);
+
+    for (i = 0; i < cacheKeys.length; ++i) {
+      delete this.chunkDiffCache[cacheKeys[i]];
+    }
+
+    // Empty chunk map
+    cacheKeys = Object.keys(this.chunkMap);
+    for (i = 0; i < cacheKeys.length; ++i) {
+      this.bin.push(this.chunkMap[cacheKeys[i]]);
+      delete this.chunkMap[cacheKeys[i]];
+    }
+
+    return undefined;
+  }
 }
