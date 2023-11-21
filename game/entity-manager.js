@@ -14,7 +14,11 @@ import { EntityType } from "./types.js";
  * store the entity type, and the 24 remaining bits contain the index.
  * The entity type is enumerated descending from 255 - 1, and indexed by
  * the complement: ID - 255.
- * @typedef {number} EntityID 
+ * @typedef {number} EntityID - Number: [TYPE]{8bit}[IDX]{24bit}
+ */
+
+/**
+ * @typedef {string} EntityIDString - Format: `{TYPE<0x>}-{IDX<0x>}` 
  */
 
 /** Class for handling entity data and assigning new IDs. */
@@ -79,6 +83,24 @@ export class EntityManager {
    */
   static getIDIndex(id) {
     return (id & ~(0xFF << 24));
+  }
+
+  /**
+   * Serialize an ID to string.
+   * @param {EntityID} id - An entity ID.
+   * @returns {EntityIDString}
+   */
+  static IDToStr(id) {
+    return `${EntityManager.getIDType(id).toString(16)}-${EntityManager.getIDIndex(id).toString(16)}`;
+  }
+
+  /**
+   * Deserialize an EntityIDString to an EntityID.
+   * @param {EntityIDString} idStr - An entity ID string.
+   * @returns {EntityID}
+   */
+  static StrToID(idStr) {
+    return EntityManager.createID(parseInt(idStr, 16), parseInt(idStr.slice(idStr.indexOf('-') + 1), 16));
   }
 
   /**

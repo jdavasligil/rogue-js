@@ -14,6 +14,7 @@ import { World } from "./map-generation.js";
 import { hasCollision } from "./collision.js";
 import { mulberry32 } from "../lib/fast-random.js";
 import { Tile } from "./types.js";
+import { EntityManager } from "./entity-manager.js";
 
 // LOCAL STORAGE FORMATS
 /**
@@ -23,10 +24,8 @@ import { Tile } from "./types.js";
  * @typedef {string} ChunkDiff - Val format: `{u<0x>},{v<0x>}:{TILE<0x>};...`
  */
 /**
- * @typedef {string} EntityDiff - Val format: `\n{u<0x>},{v<0x>}:{DATA};...`
- */
-/**
- * @typedef {string} DiffString - ChunkDiff + EntityDiff
+ * Note: Entity diffs are only kept in cache (cleared during world change).
+ * @typedef {string} EntityDiff - Val format: `\n{u<0x>},{v<0x>}:{EntityID};...`
  */
 /**
  * @typedef {string} PositionString - format: `{x<0x>},{y<0x>}`
@@ -145,10 +144,16 @@ export class ChunkManager {
     this.bin = [];
 
     /**
-     * Cache of chunk & entity diffs to prevent localstorage overuse.
-     * @type {Object.<ChunkString, DiffString>}
+     * Cache of chunk diffs.
+     * @type {Object.<ChunkString, ChunkDiff>}
      */
-    this.diffCache = {};
+    this.chunkDiffCache = {};
+
+    /**
+     * Cache of entity diffs.
+     * @type {Object.<ChunkString, EntityDiff>}
+     */
+    this.entityDiffCache = {};
 
     // Initialize Chunk Buffer
     for (let i = 0; i < this.maxChunks; ++i) {
@@ -223,7 +228,7 @@ export class ChunkManager {
 
     // Obtain free chunk index.
     let idx = this.bin.pop();
-//    idx = idx ? idx : 0;// TEMP
+    idx = idx ? idx : 0;// TEMP
 
     // Map chunk position to index for fast lookup.
     this.chunkMap[SERDE.posToStr(position)] = idx;
@@ -234,9 +239,10 @@ export class ChunkManager {
     let rng = mulberry32(Chunk.hashSeed(world.seed, world.depth, position));
     let tile = 0;
 
-    // Reset collision and vision
+    // Reset chunk data.
     chunk.colGrid.clear();
     chunk.visGrid.clear();
+    chunk.idGrid.reset();
 
     // Copy world tiles to chunk.
     for (let y = 0; y < Chunk.size; ++y) {
@@ -249,32 +255,46 @@ export class ChunkManager {
       }
     }
 
-    // search cache for diffs, check localstorage for diffs, run diff
-    let chunkStr = Chunk.toChunkString(world.depth, position);
-    let chunkDiff = this.diffCache[chunkStr];
-    if (chunkDiff === undefined) {
-      chunkDiff = window.localStorage.getItem(chunkStr);
-    }
-    if (chunkDiff === null) {
-      return undefined;
-    }
-
-    // Chunk diffs at index 0, entity diffs at index 1.
-    let diffStrings = chunkDiff.split('\n');
-    let chunkDiffs = diffStrings[0].split(';');
-    let entityDiffs = diffStrings[1].split(';');
-
     let i = 0;
     let uv = {x: 0, y: 0};
     let keyVal;
-    for (i = 0; i < chunkDiffs.length; ++i) {
-      keyVal = chunkDiffs[i].split(':'); // E.g., "a,3:fa"
-      uv.x = parseInt(keyVal[0], 16); // 10
-      uv.y = parseInt(keyVal[0].slice(keyVal.indexOf(',') + 1), 16); // 3
-      chunk.tileGrid.setTile(uv, parseInt(keyVal[0], 16)); // 250
+
+    // Run diffs.
+    let chunkStr = Chunk.toChunkString(world.depth, position);
+
+    let chunkDiff = this.chunkDiffCache[chunkStr];
+    if (chunkDiff === undefined) {
+      chunkDiff = window.localStorage.getItem(chunkStr);
+    }
+    if (chunkDiff !== null && chunkDiff !== undefined) {
+      let chunkDiffs = chunkDiff.split(';');
+      for (i = 0; i < chunkDiffs.length; ++i) {
+        keyVal = chunkDiffs[i].split(':'); // E.g., "a,3:fa"
+        uv.x = parseInt(keyVal[0], 16); // 10
+        uv.y = parseInt(keyVal[0].slice(keyVal.indexOf(',') + 1), 16); // 3
+
+        chunk.tileGrid.setTile(uv, parseInt(keyVal[1], 16)); // 250
+      }
+      // Remove diff from cache.
+      this.chunkDiffCache[chunkStr] = undefined; // MEMORY LEAK
     }
 
-    // TODO: Spawn entities and apply diffs
+    let entityDiff = this.entityDiffCache[chunkStr];
+    if (entityDiff !== undefined) {
+      let entityDiffs = entityDiff.split(';');
+      for (i = 0; i < entityDiffs.length; ++i) {
+        keyVal = entityDiffs[i].split(':'); // E.g., "a,3:ID"
+        uv.x = parseInt(keyVal[0], 16); // 10
+        uv.y = parseInt(keyVal[0].slice(keyVal.indexOf(',') + 1), 16); // 3
+
+        chunk.idGrid.setID(uv, EntityManager.StrToID(keyVal[1])); // 250
+      }
+      // Remove diff from cache.
+      this.entityDiffCache[chunkStr] = undefined; // MEMORY LEAK
+    }
+    else {
+      // Run random entity generation (treasure, monsters, teleporters, doors, etc.). 
+    }
 
     return undefined;
   }
@@ -293,8 +313,10 @@ export class ChunkManager {
     let idx = this.chunkMap[SERDE.posToStr(position)];
     let chunk = this.chunkBuffer[idx];
     let chunkDiffStr = "";
+    let entityDiffStr = "";
     let worldTile = 0;
     let tile = 0;
+    let entityID = 0;
 
     for (let y = 0; y < Chunk.size; ++y) {
       for (let x = 0; x < Chunk.size; ++x) {
@@ -303,20 +325,29 @@ export class ChunkManager {
         worldTile = world.lookup(worldPos.x + x, worldPos.y + y);
         tile = chunk.tileGrid.getTile({x: x, y: y});
         if (tile !== worldTile) {
-          if (chunkDiffStr) chunkDiffStr += ';';
+          if (chunkDiffStr !== "") chunkDiffStr += ';';
           chunkDiffStr += Chunk.toChunkDiff({x: x, y: y}, tile);
         }
 
-        // Handle entities?
+        // Save entity diffs.
+        entityID = chunk.idGrid.getID({x: x, y: y});
+        if (entityID > 0) {
+          if (entityDiffStr !== "") chunkDiffStr += ';';
+          entityDiffStr += `${x.toString(16)},${y.toString(16)}:${EntityManager.IDToStr(entityID)}`;
+        }
       }
     }
 
-    // Save diffs to cache.
-    this.diffCache[Chunk.toChunkString(world.depth, position)] = chunkDiffStr;
+    // Cache diffs.
+    this.chunkDiffCache[Chunk.toChunkString(world.depth, position)] = chunkDiffStr;
+    this.entityDiffCache[Chunk.toChunkString(world.depth, position)] = entityDiffStr;
+
+    // Save diffs to Local Storage.
+    window.localStorage.setItem(Chunk.toChunkString(world.depth, position), chunkDiffStr);
 
     // Unload chunk.
     this.bin.push(idx);
-    this.chunkMap[SERDE.posToStr(position)] = undefined; // MEMORY LEAK?
+    this.chunkMap[SERDE.posToStr(position)] = undefined; // MEMORY LEAK
 
     return undefined;
   }
@@ -351,5 +382,67 @@ export class ChunkManager {
     }
   }
 
-  // TODO: Handle loading / unloading of DIFFS
+  /**
+   * Try to retrieve the tile at a given world coordinate position (slow).
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @returns {Tile | undefined}
+   */
+  getTile(position) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return undefined;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    return chunk.tileGrid.getTile({
+      x: position.x - chunkWorldCoord.x,
+      y: position.y - chunkWorldCoord.y
+    });
+  }
+
+  /**
+   * Try to retrieve the collision at a given world coordinate position (slow).
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @returns {boolean | undefined}
+   */
+  getCollision(position) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return undefined;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    return chunk.colGrid.getBit({
+      x: position.x - chunkWorldCoord.x,
+      y: position.y - chunkWorldCoord.y
+    });
+  }
+
+  /**
+   * Try to retrieve the visibility at a given world coordinate position (slow).
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @returns {boolean | undefined}
+   */
+  getVisibility(position) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return undefined;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    return chunk.visGrid.getBit({
+      x: position.x - chunkWorldCoord.x,
+      y: position.y - chunkWorldCoord.y
+    });
+  }
+
+  /**
+   * Try to retrieve the EntityID at a given world coordinate position (slow).
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @returns {import("./entity-manager.js").EntityID | undefined}
+   */
+  getID(position) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return undefined;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    return chunk.idGrid.getID({
+      x: position.x - chunkWorldCoord.x,
+      y: position.y - chunkWorldCoord.y
+    });
+  }
 }
