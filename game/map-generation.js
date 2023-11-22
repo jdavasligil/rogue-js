@@ -9,7 +9,7 @@
 
 import { mulberry32 } from "../lib/fast-random.js";
 import { Chunk } from "./chunk-manager.js";
-import { Tile } from "./types.js";
+import { Tile } from "./tile.js";
 
 // 1. Generate large tilemap.
 // 2. Player spawn is always (0,0).
@@ -85,8 +85,8 @@ export class World {
    */
   generateTown() {
     this.defaultTile = Tile.Floor;
-    this.height = 8 * Chunk.size;
-    this.width = 8 * Chunk.size;
+    this.height = 2 * Chunk.size;
+    this.width = 3 * Chunk.size;
 
     //let rng = mulberry32(this.seed);
     let spawn = {x: this.width / 2, y: this.height / 2};
