@@ -8,15 +8,7 @@
 "use strict";
 
 import { SERDE } from "../lib/serde";
-
-/**
- * @typedef {{x: number, y: number}} Position
- */
-
-/**
- * An enum for tiles.
- * @typedef {number} Tile
- */
+import { Tile } from "./tile";
   
 /** Class representing an NxN grid of tiles. */
 export class TileGrid {
@@ -32,17 +24,8 @@ export class TileGrid {
   }
 
   /**
-   * Deserialize from JSON.
-   * @param {object} json - JSON object.
-   * @returns {TileGrid}
-   */
-  static from(json) {
-    return new TileGrid(json.width, new Uint8Array(Object.values(json.data)));
-  }
-
-  /**
    * Get the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @returns {Tile | undefined} - The tile found or undefined.
    */
   getTile(position) {
@@ -51,7 +34,7 @@ export class TileGrid {
 
   /**
    * Set the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @param {Tile} - The tile to set.
    */
   setTile(position, tile) {
@@ -60,7 +43,7 @@ export class TileGrid {
 
   /**
    * Replace the tile at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @param {Tile} - The replacement tile.
    * @returns {Tile} - The tile being replaced.
    */
@@ -105,17 +88,8 @@ export class IDGrid {
   }
 
   /**
-   * Deserialize from JSON.
-   * @param {object} json - JSON object.
-   * @returns {IDGrid}
-   */
-  static from(json) {
-    return Object.assign(new IDGrid(json.width), json);
-  }
-
-  /**
    * Return the entity stack at the given position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @returns {number | undefined} - The id found or undefined.
    */
   entitiesAt(position) {
@@ -124,7 +98,7 @@ export class IDGrid {
 
   /**
    * Pop the top entity at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @returns {number | undefined} - The id found or undefined.
    */
   popID(position) {
@@ -136,7 +110,7 @@ export class IDGrid {
 
   /**
    * Get the top entity at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @returns {number | undefined} - The id found or undefined.
    */
   getID(position) {
@@ -148,8 +122,8 @@ export class IDGrid {
 
   /**
    * Set the id at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @param {number} - The id to set.
+   * @param {import("./types").Position} position - The local coordinate position.
+   * @param {number} id - The id to set.
    */
   setID(position, id) {
     if (this.data[SERDE.posToStr(position)] === undefined) {
@@ -160,8 +134,8 @@ export class IDGrid {
 
   /**
    * Replace the ID at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
-   * @param {number} - The replacement id.
+   * @param {import("./types").Position} position - The local coordinate position.
+   * @param {number} id - The replacement id.
    * @returns {number | undefined} - The id being replaced.
    */
   replaceID(position, id) {
@@ -177,7 +151,7 @@ export class IDGrid {
 
   /**
    * Set the id at the given local coordinate position under the top one.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @param {number} - The replacement id.
    */
   setUnderID(position, id) {
@@ -238,17 +212,8 @@ export class BitGrid {
   }
 
   /**
-   * Deserialize from JSON.
-   * @param {object} json - JSON object.
-   * @returns {BitGrid}
-   */
-  static from(json) {
-    return new BitGrid(json.width, new Uint8Array(Object.values(json.data)));
-  }
-
-  /**
    * Get the bit at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    * @returns {boolean} - True if bit is set, otherwise false.
    */
   getBit(position) {
@@ -257,7 +222,7 @@ export class BitGrid {
 
   /**
    * Set the bit at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    */
   setBit(position) {
     this.data[position.y * this.bytesPerRow + ((position.x / 8) >> 0)] |= (1 << (7 - position.x % 8));
@@ -265,7 +230,7 @@ export class BitGrid {
 
   /**
    * Clear the bit at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    */
   clearBit(position) {
     this.data[position.y * this.bytesPerRow + ((position.x / 8) >> 0)] &= ~(1 << (7 - position.x % 8));
@@ -273,7 +238,7 @@ export class BitGrid {
 
   /**
    * Clear the bit at a given local coordinate position.
-   * @param {Position} - The local coordinate position.
+   * @param {import("./types").Position} position - The local coordinate position.
    */
   toggleBit(position) {
     this.data[position.y * this.bytesPerRow + ((position.x / 8) >> 0)] ^= (1 << (7 - position.x % 8));

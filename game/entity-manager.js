@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { EntityType } from "./types.js";
+import { EntityType } from "./archetype/archetype.js";
 
 /**
  * An entity ID is a 32 bit unsigned integer where the leftmost 8 bits
