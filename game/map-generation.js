@@ -29,11 +29,13 @@ import { Tile } from "./types.js";
 export class World {
   /**
    * Create a world template stored using object reference.
+   * @param {} Create a world template stored using object reference.
    * @returns {World}
    */
-  constructor(seed, depth=0) {
+  constructor(seed, depth=0, time=0) {
     this.seed = seed;
     this.depth = depth; // Zero is surface, positive numbers are lower levels.
+    this.time = 0; // 
     this.defaultTile = Tile.Floor;
     this.tiles = {};
     this.width = 0;

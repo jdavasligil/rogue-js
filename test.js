@@ -5,6 +5,7 @@ import { Player } from "./game/archetypes/player.js";
 import { ChunkManager } from "./game/chunk-manager.js";
 import { EntityManager } from "./game/entity-manager.js";
 import { World } from "./game/map-generation.js";
+import { Tile } from "./game/types.js";
 import { SERDE } from "./lib/serde.js";
 
 // Get DOM elements and context
@@ -31,18 +32,35 @@ function testChunkManager() {
   let chunkRadius = 1;
 
   let em = new EntityManager();
-  em.insert(new Player());
-
   let cm = new ChunkManager(spawn, world.width, world.height, chunkRadius);
+  cm.update(spawn, world, true);
+
+  cm.setTile({x: 65, y: 64}, Tile.Monster);
+  cm.setID(em.insert(new Monster()));
+
+  let pid = em.insert(new Player());
+  console.log(cm.setID(spawn, pid));
+
   console.log(cm.width);
   console.log(cm.height);
-  cm.update(spawn, world, true);
   console.log(SERDE.posToStr(spawn));
   console.log(cm.getTile(spawn));
   console.log(cm.chunksAvailable());
   console.log(Object.keys(cm.chunkMap));
+  console.log(Object.values(cm.chunkMap));
+
   // Teleport to upper left corner.
   cm.update({x: 1, y: 1}, world);
+  console.log('ENTDIFFS: ' + JSON.stringify(cm.entityDiffCache));
+  console.log('CNKDIFFS: ' +JSON.stringify(cm.chunkDiffCache));
+  console.log(Object.values(cm.chunkMap));
+
+  // Teleport to back to spawn.
+  cm.update(spawn, world);
+  console.log('ENTDIFFS: ' + JSON.stringify(cm.entityDiffCache));
+  console.log('CNKDIFFS: ' + JSON.stringify(cm.chunkDiffCache));
+  console.log(Object.values(cm.chunkMap));
+
 }
 
 //testEntityManager();

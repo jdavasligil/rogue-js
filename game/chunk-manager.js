@@ -278,7 +278,7 @@ export class ChunkManager {
         chunk.tileGrid.setTile(uv, parseInt(keyVal[1], 16)); // 250
       }
       // Remove diff from cache.
-      this.chunkDiffCache[chunkStr] = undefined; // MEMORY LEAK
+      delete this.chunkDiffCache[chunkStr];
     }
 
     let entityDiff = this.entityDiffCache[chunkStr];
@@ -292,7 +292,7 @@ export class ChunkManager {
         chunk.idGrid.setID(uv, EntityManager.StrToID(keyVal[1])); // 250
       }
       // Remove diff from cache.
-      this.entityDiffCache[chunkStr] = undefined; // MEMORY LEAK
+      delete this.entityDiffCache[chunkStr];
     }
     else {
       // Run random entity generation (treasure, monsters, teleporters, doors, etc.). 
@@ -345,17 +345,19 @@ export class ChunkManager {
     // Cache diffs.
     if (chunkDiffStr !== "") {
       this.chunkDiffCache[Chunk.toChunkString(world.depth, position)] = chunkDiffStr;
+
+      // Save chunk diffs to Local Storage.
+      window.localStorage.setItem(Chunk.toChunkString(world.depth, position), chunkDiffStr);
     }
+
     if (entityDiffStr !== "") {
       this.entityDiffCache[Chunk.toChunkString(world.depth, position)] = entityDiffStr;
     }
 
-    // Save diffs to Local Storage.
-    window.localStorage.setItem(Chunk.toChunkString(world.depth, position), chunkDiffStr);
 
     // Unload chunk.
     this.bin.push(idx);
-    this.chunkMap[SERDE.posToStr(position)] = undefined; // MEMORY LEAK
+    delete this.chunkMap[SERDE.posToStr(position)]; 
 
     return undefined;
   }
@@ -390,7 +392,7 @@ export class ChunkManager {
   }
 
   /**
-   * Try to retrieve the tile at a given world coordinate position (slow).
+   * Try to retrieve the tile at a given world coordinate position.
    * @param {import("./types.js").Position} position - World coordinate.
    * @returns {Tile | undefined}
    */
@@ -406,7 +408,7 @@ export class ChunkManager {
   }
 
   /**
-   * Try to retrieve the collision at a given world coordinate position (slow).
+   * Try to retrieve the collision at a given world coordinate position.
    * @param {import("./types.js").Position} position - World coordinate.
    * @returns {boolean | undefined}
    */
@@ -422,7 +424,7 @@ export class ChunkManager {
   }
 
   /**
-   * Try to retrieve the visibility at a given world coordinate position (slow).
+   * Try to retrieve the visibility at a given world coordinate position.
    * @param {import("./types.js").Position} position - World coordinate.
    * @returns {boolean | undefined}
    */
@@ -438,7 +440,7 @@ export class ChunkManager {
   }
 
   /**
-   * Try to retrieve the EntityID at a given world coordinate position (slow).
+   * Try to retrieve the EntityID at a given world coordinate position.
    * @param {import("./types.js").Position} position - World coordinate.
    * @returns {import("./entity-manager.js").EntityID | undefined}
    */
@@ -451,6 +453,95 @@ export class ChunkManager {
       x: position.x - chunkWorldCoord.x,
       y: position.y - chunkWorldCoord.y
     });
+  }
+
+  /**
+   * Try to set the tile at the given world coordinate position.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @param {Tile} tile - Game tile.
+   * @returns {Tile | undefined}
+   */
+  setTile(position, tile) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return tile;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+
+    chunk.tileGrid.setTile(
+      {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y},
+      tile
+    );
+
+    return undefined;
+  }
+
+  /**
+   * Try to set the collision at the given world coordinate position.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @param {boolean} state - Collision for chunk position set on or off.
+   * @returns {boolean | undefined}
+   */
+  setCollision(position, state) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return state;
+
+    // TODO FINISH SETTERS
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+
+    if (state === true) {
+      chunk.colGrid.setBit(
+        {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y}
+      );
+    } else {
+      chunk.colGrid.clearBit(
+        {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y}
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Try to set the visibility at a given world coordinate position.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @param {boolean} state - Visibility for chunk position set on or off.
+   * @returns {boolean | undefined}
+   */
+  setVisibility(position) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return state;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    if (state === true) {
+      chunk.visGrid.setBit(
+        {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y}
+      );
+    } else {
+      chunk.visGrid.clearBit(
+        {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y}
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Try to set the EntityID at a given world coordinate position.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @param {import("./entity-manager.js").EntityID} id - Entity ID.
+   * @returns {import("./entity-manager.js").EntityID | undefined}
+   */
+  setID(position, id) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return id;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    chunk.idGrid.setID(
+      {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y},
+      id
+    );
+
+    return undefined;
   }
 
   /**
