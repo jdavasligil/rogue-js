@@ -7,7 +7,18 @@
 
 "use strict";
 
-import { Direction, EntityType, Literacy, Tile } from "../types.js";
+import { Tile } from "../tile.js";
+import { EntityType } from "./archetype.js";
+
+/**
+ * Enumeration of literacy levels.
+ * @enum {number}
+ */
+export const Literacy = {
+  Illiterate: 0,
+  Basic:      1,
+  Literate:   2,
+}
 
 /** Data class representing player data */
 export class Player {

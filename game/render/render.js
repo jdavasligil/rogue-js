@@ -5,7 +5,34 @@
  * @package
  */
 
-import { Color, Tile } from "./types.js";
+"use strict";
+
+import { Tile } from "./tile.js";
+
+/**
+ * Enumeration of custom color palette colors.
+ * @readonly
+ * @enum {string}
+ */
+export const Color = {
+  White:      "#E1D9D1",
+  Slate:      "#3C3A2D",
+  Brown:      "#684E11",
+  DarkBrown:  "#151004",
+  Orange:     "#EFBC74",
+  DarkOrange: "#c4761b",
+  MagicBlue:  "#0784b5",
+}
+
+/**
+ * Enumeration of rendering modes.
+ * @readonly
+ * @enum {number}
+ */
+export const RenderingMode = {
+  Ascii: 0,
+  Tile:  1,
+}
 
 /**
  * Used by renderer in ASCII mode to match default tile colors.

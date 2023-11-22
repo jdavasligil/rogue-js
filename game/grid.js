@@ -1,16 +1,13 @@
 /**
- * @fileoverview (CC0) 2023 Jaedin Davasligil
+ * @fileoverview Copyright (c) 2023 Jaedin Davasligil
  *
- * To the extent possible under law, the author has dedicated all copyright
- * and related and neighboring rights to this software to the public domain
- * worldwide. This software is distributed without any warranty.
- * See <http://creativecommons.org/publicdomain/zero/1.0/>.
- *
- * Classes for reusable grid structures.
+ * Rogue-JS is a pure javascript browser dungeon crawler.
  * @package
  */
 
 "use strict";
+
+import { SERDE } from "../lib/serde";
 
 /**
  * @typedef {{x: number, y: number}} Position
@@ -27,6 +24,7 @@ export class TileGrid {
    * Create a tile array.
    * @param {number} width - The grid width N.
    * @param {Uint8Array | undefined} data - An array buffer.
+   * @returns {TileGrid}
    */
   constructor(width, data=undefined) {
     this.width = width;
@@ -95,20 +93,15 @@ export class TileGrid {
   }
 }
 
-/** Class representing an NxN grid of IDs. */
+/** Class mapping grid coordinates to stack of IDs. */
 export class IDGrid {
   /**
-   * Create a tile array.
-   * @param {number} width - The grid width N.
-   * @param {Uint32Array | undefined} data - Array buffer or undefined.
+   * Create an ID array.
+   * @returns {IDGrid}
    */
-  constructor(width, data=undefined) {
-    this.width = width;
-    if (data === undefined) {
-      this.data = new Uint32Array(width * width);
-    } else {
-      this.data = data;
-    }
+  constructor() {
+    /** @type {Object.<string,Array.<number>>} */
+    this.data = {};
   }
 
   /**
@@ -117,16 +110,40 @@ export class IDGrid {
    * @returns {IDGrid}
    */
   static from(json) {
-    return new IDGrid(json.width, new Uint32Array(Object.values(json.data)));
+    return Object.assign(new IDGrid(json.width), json);
   }
 
   /**
-   * Get the tile at a given local coordinate position.
+   * Return the entity stack at the given position.
+   * @param {Position} - The local coordinate position.
+   * @returns {number | undefined} - The id found or undefined.
+   */
+  entitiesAt(position) {
+    return this.data[SERDE.posToStr(position)];
+  }
+
+  /**
+   * Pop the top entity at a given local coordinate position.
+   * @param {Position} - The local coordinate position.
+   * @returns {number | undefined} - The id found or undefined.
+   */
+  popID(position) {
+    if (this.data[SERDE.posToStr(position)] === undefined) {
+      return undefined;
+    }
+    return this.data[SERDE.posToStr(position)].pop();
+  }
+
+  /**
+   * Get the top entity at a given local coordinate position.
    * @param {Position} - The local coordinate position.
    * @returns {number | undefined} - The id found or undefined.
    */
   getID(position) {
-    return this.data[position.y * this.width + position.x];
+    if (this.data[SERDE.posToStr(position)] === undefined) {
+      return undefined;
+    }
+    return this.data[SERDE.posToStr(position)].at(-1);
   }
 
   /**
@@ -135,26 +152,53 @@ export class IDGrid {
    * @param {number} - The id to set.
    */
   setID(position, id) {
-    this.data[position.y * this.width + position.x] = id;
-  }
-
-  /**
-   * Reset the entire grid.
-   */
-  reset() {
-    this.data.fill(0);
+    if (this.data[SERDE.posToStr(position)] === undefined) {
+      this.data[SERDE.posToStr(position)] = new Array();
+    }
+    this.data[SERDE.posToStr(position)].push(id);
   }
 
   /**
    * Replace the ID at a given local coordinate position.
    * @param {Position} - The local coordinate position.
    * @param {number} - The replacement id.
-   * @returns {number} - The id being replaced.
+   * @returns {number | undefined} - The id being replaced.
    */
   replaceID(position, id) {
-    let idReplaced = this.data[position.y * this.width + position.x];
-    this.data[position.y * this.width + position.x] = id;
+    if (this.data[SERDE.posToStr(position)] === undefined) {
+      this.data[SERDE.posToStr(position)] = new Array();
+    }
+    let arr = this.data[SERDE.posToStr(position)];
+
+    let idReplaced = arr.pop();
+    arr.push(id);
     return idReplaced;
+  }
+
+  /**
+   * Set the id at the given local coordinate position under the top one.
+   * @param {Position} - The local coordinate position.
+   * @param {number} - The replacement id.
+   */
+  setUnderID(position, id) {
+    if (this.data[SERDE.posToStr(position)] === undefined) {
+      this.data[SERDE.posToStr(position)] = new Array();
+    }
+    let arr = this.data[SERDE.posToStr(position)];
+
+    let top = arr.pop();
+    arr.push(id);
+    if (top !== undefined) arr.push(top);
+  }
+
+  /**
+   * Reset the entire grid to empty.
+   */
+  reset() {
+    let keys = Object.keys(this.data);
+    for (let i = 0; i < keys.length; ++i) {
+      delete this.data[keys[i]];
+    }
   }
 
   /**
@@ -180,6 +224,7 @@ export class BitGrid {
    * @param {number} width - The grid width.
    * @param {Uint8Array | undefined} data - Optional array buffer.
    * @param {boolean} fill - Whether or not the bits should be set or unset.
+   * @returns {BitGrid}
    */
   constructor(width, data=undefined, fill=false) {
     this.width = width;

@@ -9,12 +9,11 @@
 
 import { GAMMA2 } from "../lib/gamma.js";
 import { SERDE } from "../lib/serde.js";
-import { BitGrid, IDGrid, TileGrid } from "../lib/grid.js";
+import { BitGrid, IDGrid, TileGrid } from "./grid.js";
 import { World } from "./map-generation.js";
-import { hasCollision } from "./collision.js";
 import { mulberry32 } from "../lib/fast-random.js";
-import { Tile } from "./types.js";
 import { EntityManager } from "./entity-manager.js";
+import { Tile, tileCollision } from "./tile.js";
 
 // LOCAL STORAGE FORMATS
 /**
@@ -35,17 +34,17 @@ import { EntityManager } from "./entity-manager.js";
 export class Chunk {
   /**
    * Create a Chunk.
-   * @param {TileGrid} tileGrid - Tile grid.
+   * @param {TileGrid} tileGrid - Terrain tile grid.
    * @param {BitGrid} visGrid - Visibility bit grid.
    * @param {BitGrid} colGrid - Collision bit grid.
-   * @param {IDGrid} idGrid - ID grid.
+   * @param {IDGrid} idGrid - Entity ID grid.
    * @returns {Chunk}
    */
   constructor() {
     this.tileGrid = new TileGrid(Chunk.size); 
     this.visGrid  = new BitGrid(Chunk.size); 
     this.colGrid  = new BitGrid(Chunk.size); 
-    this.idGrid   = new IDGrid(Chunk.size); 
+    this.idGrid   = new IDGrid();
   }
 
   static get size() { return 16; }
@@ -244,14 +243,14 @@ export class ChunkManager {
     chunk.visGrid.clear();
     chunk.idGrid.reset();
 
-    // Copy world tiles to chunk.
+    // Parse world template info into the chunk map.
     for (let y = 0; y < Chunk.size; ++y) {
       for (let x = 0; x < Chunk.size; ++x) {
         tile = world.lookup(worldPos.x + x, worldPos.y + y);
 
         chunk.tileGrid.setTile({x: x, y: y}, tile);
 
-        if (hasCollision(tile)) {
+        if (tileCollision(tile)) {
           chunk.colGrid.setBit({x: x, y: y})
         }
       }
