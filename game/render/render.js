@@ -22,12 +22,19 @@ import { Camera } from "./camera.js";
  */
 export const Color = {
   White:      "#E1D9D1",
+  Black:      "#000000",
   Slate:      "#3C3A2D",
   Brown:      "#684E11",
   DarkBrown:  "#151004",
   Orange:     "#EFBC74",
+  Blood:      "#FF1919",
+  Green:      "#19ff21",
   DarkOrange: "#c4761b",
-  MagicBlue:  "#0784b5",
+  MagicBlue:  "#193cff",
+  Copper:     "#B87333",
+  Silver:     "#C0C0C0",
+  Steel:      "#8d8d94",
+  Gold:       "#FFD700",
 }
 
 /**
@@ -65,6 +72,7 @@ export class RenderEngine {
   static matchTileColor(tile) {
     switch(tile) {
       case Tile.Floor:
+      case Tile.Bedrock:
         return Color.Slate;
 
       case Tile.OpenDoor:
@@ -79,6 +87,23 @@ export class RenderEngine {
       case Tile.Townsfolk:
         return Color.White;
 
+      case Tile.Alchemist:   
+        return Color.Green;
+      case Tile.Armoury:     
+        return Color.Steel;
+      case Tile.BlackMarket: 
+        return Color.Black;
+      case Tile.Home:        
+        return Color.White;
+      case Tile.MagicShop:   
+        return Color.MagicBlue;
+      case Tile.Store:       
+        return Color.Copper;
+      case Tile.Temple:      
+        return Color.Gold;
+      case Tile.Weaponsmith: 
+        return Color.Blood;
+
       default:
         return Color.Orange;
     }
@@ -92,22 +117,84 @@ export class RenderEngine {
    */
   static matchTile(tile) {
     switch(tile) {
+      case Tile.Player:
+        return '@';
+
       case Tile.Floor:
         return '.';
-      case Tile.Wall:
-        return '#';
       case Tile.OpenDoor:
         return '\'';
       case Tile.ClosedDoor:
         return '+';
-      case Tile.Player:
-        return '@';
+      case Tile.PortcullisUp:
+      case Tile.PortcullisDown:
+        return ':';
       case Tile.StairsUp:
-        return '<'
+        return '<';
       case Tile.StairsDown:
-        return '>'
-      case Tile.Townsfolk:
-        return 't'
+        return '>';
+
+      case Tile.Wall:
+      case Tile.Bedrock:
+      case Tile.Granite:
+        return '#';
+      case Tile.Rubble:
+      case Tile.Quartz:      
+      case Tile.Copper:      
+      case Tile.Silver:      
+      case Tile.Gold:        
+        return '%';
+
+      case Tile.Alchemist:   
+        return '5';
+      case Tile.Armoury:     
+        return '3';
+      case Tile.BlackMarket: 
+        return '4';
+      case Tile.Home:        
+        return '0';
+      case Tile.MagicShop:   
+        return '6';
+      case Tile.Store:       
+        return '1';
+      case Tile.Temple:      
+        return '7';
+      case Tile.Weaponsmith: 
+        return '2';
+
+      case Tile.RoomNode:    
+        return '*';
+
+      case Tile.Food:        
+        return 'f';
+      case Tile.Item:        
+        return '?';
+      case Tile.Potion:      
+        return 'p';
+      case Tile.Scroll:      
+        return 's';
+      case Tile.Treasure:    
+        return '$';
+      case Tile.Weapon:      
+        return 'w';
+
+      case Tile.Guard:       
+        return 'g';
+      case Tile.Mercenary:   
+        return 'm';
+
+      case Tile.Thief:       
+      case Tile.Beggar:      
+        return 'b';
+      case Tile.Townsfolk:   
+        return 't';
+
+      case Tile.Dog:         
+        return 'd';
+      case Tile.Skeleton:    
+        return 's';
+      case Tile.Goblin:      
+        return 'g';
 
       default:
         return '*';
@@ -204,6 +291,14 @@ export class RenderEngine {
     this.ctx.strokeRect(x, y, this.sideWidth, this.canvas.height);
     this.ctx.fillStyle = Color.DarkBrown;
     this.ctx.fillRect(x + frameWidth, y + frameWidth, this.sideWidth - frameWidth * 2, this.canvas.height - frameWidth * 2);
+  }
+
+  /**
+   * Draws the UI.
+   */
+  drawUI() {
+    this.drawSideBar(0, 0);
+    this.drawSideBar(this.canvas.width - this.sideWidth, 0);
   }
 
   /**

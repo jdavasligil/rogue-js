@@ -45,6 +45,7 @@ export const Action = {
   Escape:    "Escape",
   ZoomIn:    "=",
   ZoomOut:   "-",
+  Debug:     "`",
 }
 
 /**

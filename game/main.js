@@ -202,6 +202,11 @@ function playerInput(game) {
           game.renderer.camera.decreaseResolution();
           redraw(game);
           break;
+        case Action.Debug:
+          keyDetected = true;
+          game.debug = game.debug ? false : true;
+          redraw(game);
+          break;
       }
 
       if (keyDetected) {
@@ -255,6 +260,7 @@ function handleEvents(game) {
         game.chunks.setID(spawn, game.player.id);
 
         redraw(game);
+        game.renderer.drawUI();
 
         game.state = GameState.Running;
         break;

@@ -174,6 +174,7 @@ export class World {
 
     const spawn = {x: this.width / 2, y: this.height / 2};
     const rng = mulberry32(this.seed);
+
     const shops = [
       Tile.Alchemist,      
       Tile.Armoury,        
@@ -196,7 +197,6 @@ export class World {
     ];
 
     FRNG.shuffle(rng, shops);
-    console.log(shops);
 
     // Create Walls
     this.drawRectangle(Tile.Wall, {x: 0, y: 0}, this.width, this.height);
