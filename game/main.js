@@ -43,42 +43,12 @@ const rng = mulberry32(seed);
 //const Ancestries = await getJSON("./data/ancestries.json");
 //const Classes = await getJSON("./data/classes.json");
 
-/**
- * Constructor for the world.
- * @returns {T.World}
- */
-function newWorld() {
-  return {
-    chunks: new ChunkManager(),
-    entities: new EntityManager(),
-    events: new RingBuffer(),
-    camera: new Camera(),
-    renderer: RenderingMode.Ascii,
-    turn: 0,
-    state: GameState.Loading,
-    options: [],
-    selection: 0,
-    saveFileExists: false,
-    debug: false,
-  };
-}
-
-
-// Title screen
 
 // Handle camera movement
 /**
- *
+ * @param {Renderer} renderer - The render engine.
  */
-function moveCamera(world, dir) {
-  const buffer = world.camera.deadZone;
-  const dx = Math.abs(world.entities[0].position.x - world.camera.position.x);
-  const dy = Math.abs(world.entities[0].position.y - world.camera.position.y);
-
-  if (dx > buffer || dy > buffer) {
-    world.camera.position.x += dir.x;
-    world.camera.position.y += dir.y;
-  }
+function moveCamera(renderer, em, dir) {
 }
 
 // Handle player movement and collision

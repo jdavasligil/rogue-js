@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { Chunk, ChunkManager } from "../chunk-manager.js";
+import { ChunkManager } from "../chunk-manager.js";
 import { EntityManager } from "../entity-manager.js";
 import { Tile } from "../tile.js";
 import { MainMenuOption } from "../types.js";
@@ -40,7 +40,7 @@ export const RenderingMode = {
 
 
 /** Class responsible for rendering to the canvas */
-export class Renderer {
+export class RenderEngine {
   /**
    * Creates a renderer.
    * @param {HTMLCanvasElement} canvas - The canvas to be rendered to.
@@ -79,6 +79,22 @@ export class Renderer {
 
       default:
         return Color.Orange;
+    }
+  }
+
+  // TODO TEST
+  /**
+   * Update the camera based on the player's position.
+   * @param {EntityManager} em - Entity Manager.
+   * @param {import("../entity-manager.js").EntityID} pid - The player ID.
+   */
+  updateCamera(em, pid) {
+    const player = em.lookup(pid);
+    const dx = Math.abs(player.position.x - this.camera.position.x);
+    const dy = Math.abs(player.position.y - this.camera.position.y);
+
+    if (dx > this.camera.deadZone || dy > this.camera.deadZone) {
+      this.camera.shift(player.orientation, 1);
     }
   }
 
