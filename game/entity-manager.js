@@ -109,6 +109,7 @@ export class EntityManager {
    * @returns {object | undefined}
    */
   lookup(id) {
+    //if (id === undefined) return undefined;
     return this.data[EntityManager.getIDType(id)][EntityManager.getIDIndex(id)];
   }
 

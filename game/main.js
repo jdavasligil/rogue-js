@@ -85,7 +85,8 @@ function moveEntity(id, dir, game) {
     return false;
   }
 
-  game.chunks.replaceID(id);
+  game.chunks.setID(newPosition, id);
+  game.chunks.popID(entity.position);
 
   entity.position.x = newPosition.x;
   entity.position.y = newPosition.y;
@@ -164,7 +165,7 @@ function playerInput(game) {
       switch (e.key) {
         case Action.MoveUp:
           keyDetected = true;
-          moveEntity(game.player.id, Direction.Up, game);// TODO Make work with manager
+          moveEntity(game.player.id, Direction.Up, game);
           break;
         case Action.MoveDown:
           keyDetected = true;
@@ -196,8 +197,8 @@ function handleEvents(game) {
   while (game.events.length > 0) {
     switch (game.events.popFront()) {
       case Event.PlayerMoved:
-        game.chunks.update(game.player.position, game.world, true);
-        game.renderer.updateCamera(game.entities, game.player.id);
+        game.chunks.update(game.player.position, game.world);
+        game.renderer.updateCamera(game.player);
         game.renderer.clearGrid();
         game.renderer.draw(game.entities, game.chunks);
         if (game.debug) {
@@ -233,7 +234,14 @@ function handleEvents(game) {
           2
         );
         game.chunks.update(spawn, game.world, true);
+
+        game.chunks.setID(spawn, game.player.id);
         game.renderer.draw(game.entities, game.chunks);
+
+        if (game.debug) {
+          game.renderer.drawDebugGrid();
+          game.renderer.drawDebugDeadZone();
+        }
 
         game.state = GameState.Running;
         break;

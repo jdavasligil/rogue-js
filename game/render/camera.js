@@ -12,7 +12,7 @@
  * @enum {number}
  */
 export const Resolution = {
-  Low:    18,
+  Low:    16,
   Medium: 24,
   High:   32,
 }
@@ -25,7 +25,7 @@ export class Camera {
     * @param {number} deadZone - Distance moved from center before camera moves.
     */
   constructor(position={x: 0, y:0},
-              resolution=Resolution.Medium,
+              resolution=Resolution.Low,
               deadZone=4) {
     this.position = position;
     this.resolution = resolution;

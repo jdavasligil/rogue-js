@@ -5,6 +5,8 @@
  * @package
  */
 
+// TODO Handle entity stack diffing
+
 "use strict";
 
 import { GAMMA2 } from "../lib/gamma.js";
@@ -116,8 +118,8 @@ export class ChunkManager {
    * @returns {ChunkManager}
    */
   constructor(position, width, height, distance) {
-    this.position = Chunk.worldToUV(position);
     this.playerPosition = Chunk.worldToUV(position);
+    this.position = this.playerPosition;
     this.width = Math.floor(width / Chunk.size);
     this.height = Math.floor(height / Chunk.size);
     this.distance = GAMMA2.clamp(distance, 1, 8);
@@ -370,9 +372,18 @@ export class ChunkManager {
    */
   update(position, world, force=false) {
     this.playerPosition = Chunk.worldToUV(position);
-    if ((this.playerPosition === this.position) && !force) {
+    if (
+         (this.playerPosition.x === this.position.x) 
+      && (this.playerPosition.y === this.position.y)
+      && !force
+    ) {
+      console.log("Nah fam");
       return undefined;
     }
+
+    // Update current chunk manager position.
+    this.position = this.playerPosition;
+    console.log("Pos update");
 
     // Unload any chunks that are out of bounds.
     let mapKeys = Object.keys(this.chunkMap);
@@ -544,7 +555,7 @@ export class ChunkManager {
   }
 
   /**
-   * Try to replace the ID at a given world coordinate position.
+   * Try to replace the top ID at a given world coordinate position.
    * @param {import("./types.js").Position} position - World coordinate.
    * @param {import("./entity-manager.js").EntityID} id - Entity ID.
    * @returns {import("./entity-manager.js").EntityID | undefined}
@@ -558,6 +569,22 @@ export class ChunkManager {
     return chunk.idGrid.replaceID(
       {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y},
       id
+    );
+  }
+
+  /**
+   * Try to pop the top EntityID at a given world coordinate position.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @returns {import("./entity-manager.js").EntityID | undefined}
+   */
+  popID(position) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return undefined;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+
+    return chunk.idGrid.popID(
+      {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y}
     );
   }
 

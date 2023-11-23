@@ -7,6 +7,7 @@
 
 "use strict";
 
+import { Player } from "../archetype/player.js";
 import { ChunkManager } from "../chunk-manager.js";
 import { EntityManager } from "../entity-manager.js";
 import { Tile } from "../tile.js";
@@ -92,6 +93,8 @@ export class RenderEngine {
     switch(tile) {
       case Tile.Floor:
         return '.';
+      case Tile.Wall:
+        return '#';
       case Tile.OpenDoor:
         return '\'';
       case Tile.ClosedDoor:
@@ -113,11 +116,9 @@ export class RenderEngine {
   // TODO TEST
   /**
    * Update the camera based on the player's position.
-   * @param {EntityManager} em - Entity Manager.
-   * @param {import("../entity-manager.js").EntityID} pid - The player ID.
+   * @param {Player} player - Reference to the player.
    */
-  updateCamera(em, pid) {
-    const player = em.lookup(pid);
+  updateCamera(player) {
     const dx = Math.abs(player.position.x - this.camera.position.x);
     const dy = Math.abs(player.position.y - this.camera.position.y);
 
@@ -209,11 +210,12 @@ export class RenderEngine {
    */
   drawDebugGrid() {
     const res = this.camera.resolution;
+    const lineCount = Math.floor(this.canvas.height / res) + 1;
 
     this.ctx.strokeStyle = "green";
 
     // TODO: Replace Magic number 22 (number of row/col lines to draw)
-    for (let n = 0; n < 22; n++) {
+    for (let n = 0; n < lineCount; n++) {
       // Row Line
       this.ctx.beginPath();
       this.ctx.moveTo(this.sideWidth, n * res);
@@ -238,19 +240,34 @@ export class RenderEngine {
     const halfWidth = this.canvas.width / 2;
     const halfHeight = this.canvas.height / 2;
     const halfRes = res / 2;
-    const leftBound = halfWidth - zoneBuffer * res - halfRes;
-    const rightBound = halfWidth + zoneBuffer * res + halfRes;
-    const topBound = halfHeight + zoneBuffer * res + halfRes;
-    const lowerBound = halfHeight - zoneBuffer * res - halfRes;
+
+    const canvasGrids = Math.floor(this.canvas.height / res);
+
+    let leftShift  = -halfRes;
+    let rightShift =  halfRes;
+    let topShift   =  halfRes;
+    let lowShift   = -halfRes;
+
+    if (canvasGrids % 2 === 0) {
+      leftShift  = 0;
+      rightShift = res;
+      topShift   = 0;
+      lowShift   = res;
+    }
+
+    const leftBound  = halfWidth  - zoneBuffer * res + leftShift;
+    const rightBound = halfWidth  + zoneBuffer * res + rightShift;
+    const topBound   = halfHeight - zoneBuffer * res + topShift;
+    const lowerBound = halfHeight + zoneBuffer * res + lowShift;
 
     this.ctx.strokeStyle = "red";
 
     this.ctx.beginPath();
-    this.ctx.moveTo(leftBound, topBound);
+    this.ctx.moveTo(leftBound,  topBound);
     this.ctx.lineTo(rightBound, topBound);
     this.ctx.lineTo(rightBound, lowerBound);
-    this.ctx.lineTo(leftBound, lowerBound);
-    this.ctx.lineTo(leftBound, topBound);
+    this.ctx.lineTo(leftBound,  lowerBound);
+    this.ctx.lineTo(leftBound,  topBound);
     this.ctx.stroke();
     this.ctx.closePath();
   }
@@ -279,14 +296,14 @@ export class RenderEngine {
    * @param {ChunkManager} cm - Chunk Manager.
    */
   renderAscii(em, cm) {
-    const textOffsetX = 2;
-    const textOffsetY = 3;
     const res = this.camera.resolution;
+    const textOffsetX = Math.floor(res / 12);
+    const textOffsetY = Math.floor(res / 8);
     const canvasGrids = Math.floor(this.canvas.height / res);
     const center = Math.floor(canvasGrids / 2);
 
     //this.ctx.font = "24px sans-serif";
-    this.ctx.font = "24px serif";
+    this.ctx.font = `${res}px serif`;
     this.ctx.fillStyle = Color.White;
 
     let rowOffset = 0;
@@ -304,8 +321,10 @@ export class RenderEngine {
         entityID = cm.getID({x: colOffset, y: rowOffset});
 
         if (entityID !== undefined) {
-          tile = em.lookup(entityID).tile; // DANGER Assuming tile exists
+          console.log(`EID: ${entityID}`);
+          tile = em.lookup(entityID).tile;
         }
+
         this.ctx.fillStyle = RenderEngine.matchTileColor(tile);
         if (tile !== undefined) {
           this.ctx.fillText(

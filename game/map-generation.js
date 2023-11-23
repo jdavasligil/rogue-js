@@ -104,9 +104,6 @@ export class World {
       this.insert(Tile.Wall, this.width - 1, i);
     }
 
-    // Create Spawn Point
-    this.insert(Tile.Player, spawn.x, spawn.y);
-
     return spawn;
   }
 }
