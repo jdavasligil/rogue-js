@@ -321,7 +321,6 @@ export class RenderEngine {
         entityID = cm.getID({x: colOffset, y: rowOffset});
 
         if (entityID !== undefined) {
-          console.log(`EID: ${entityID}`);
           tile = em.lookup(entityID).tile;
         }
 

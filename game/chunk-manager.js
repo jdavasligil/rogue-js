@@ -224,8 +224,10 @@ export class ChunkManager {
       ||  this.loaded(position)
       || !this.inBounds(position)
     ) {
+      console.log(`Dont load ${SERDE.posToStr(position)}`);
       return position;
     }
+    console.log(`LOAD ${SERDE.posToStr(position)}`);
 
     // Obtain free chunk index.
     let idx = this.bin.pop();
@@ -363,6 +365,7 @@ export class ChunkManager {
     return undefined;
   }
 
+  // TODO Fix entity dropping on move during chunk update.
   /**
    * Given the position of the player, update all chunks if necessary.
    * @param {import("./types.js").Position} position - Player world position.
@@ -377,18 +380,16 @@ export class ChunkManager {
       && (this.playerPosition.y === this.position.y)
       && !force
     ) {
-      console.log("Nah fam");
       return undefined;
     }
 
     // Update current chunk manager position.
     this.position = this.playerPosition;
-    console.log("Pos update");
 
     // Unload any chunks that are out of bounds.
     let mapKeys = Object.keys(this.chunkMap);
     for (let i = 0; i < mapKeys.length; ++i) {
-      if (!this.withinDistance(this.chunkMap[mapKeys[i]])) {
+      if (!this.withinDistance(SERDE.strToPos(mapKeys[i]))) {
         this.unloadChunk(SERDE.strToPos(mapKeys[i]), world);
       }
     }
