@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { mulberry32 } from "../lib/fast-random.js";
+import { FRNG, mulberry32 } from "../lib/fast-random.js";
 import { Chunk } from "./chunk-manager.js";
 import { Tile } from "./tile.js";
 
@@ -81,6 +81,86 @@ export class World {
     return World.tileStore;
   }
 
+
+  /**
+   * Draw a rectangle of tiles.
+   * @param {Tile} tile - Tile to draw.
+   * @param {import("./types").Position} pos - Coordinate of top-left corner.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @param {boolean} fill - Fill the interior with tiles.
+   */
+  drawRectangle(tile, pos, width, height, fill=false) {
+    if (fill) {
+      for (let j = pos.y; j < (pos.y + height); ++j) {
+        for (let i = pos.x; i < (pos.x + width); ++i) {
+          this.insert(tile, i, j);
+        }
+      }
+    } else {
+      let i = 0;
+      for (i = pos.x; i < (pos.x + width); ++i) {
+        this.insert(tile, i, pos.y);
+        this.insert(tile, i, (pos.y + height - 1));
+      }
+      for (i = (pos.y + 1); i < (pos.y + height - 1); ++i) {
+        this.insert(tile, pos.x, i);
+        this.insert(tile, (pos.x + width - 1), i);
+      }
+    }
+  }
+
+  /**
+   * Draw a random shop.
+   * @param {function(): number} rng - Random number generator (0,1).
+   * @param {Tile} tile - Tile to draw.
+   * @param {import("./types").Position} pos - Coordinate of top-left corner.
+   * @param {number} maxSize - The maximum possible size of a shop.
+   */
+  drawShop(rng, tile, pos, maxSize=6) {
+    const width = FRNG.randInt(rng, 2, maxSize + 1);
+    const height = FRNG.randInt(rng, 2, maxSize + 1);
+    const perimeter = 2 * (height + width - 2);
+    const shopIdx = FRNG.randInt(rng, 0, perimeter);
+    const x = pos.x + FRNG.randInt(rng, 0, maxSize - width + 1);
+    const y = pos.y + FRNG.randInt(rng, 0, maxSize - height + 1);
+
+    let i = 0;
+    let count = 0;
+    for (i = x; i < (x + width); ++i) {
+      if (count === shopIdx) {
+        this.insert(tile, i, y); 
+      } else {
+        this.insert(Tile.Wall, i, y);
+      }
+      count += 1;
+
+      if (count === shopIdx) {
+        this.insert(tile, i, (y + height - 1));
+      } else {
+        this.insert(Tile.Wall, i, (y + height - 1));
+      }
+      count += 1;
+    }
+    for (i = (y + 1); i < (y + height - 1); ++i) {
+      if (count === shopIdx) {
+        this.insert(tile, x, i);
+      } else {
+        this.insert(Tile.Wall, x, i);
+      }
+      count += 1;
+
+      if (count === shopIdx) {
+        this.insert(tile, (x + width - 1), i);
+      } else {
+        this.insert(Tile.Wall, (x + width - 1), i);
+      }
+      count += 1;
+    }
+
+    this.drawRectangle(Tile.Wall, {x: x+1, y: y+1}, width-2, height-2, true);
+  }
+
   /**
    * Town generation algorithm.
    * @returns {import("./types").Position} spawn - Character spawn location.
@@ -90,18 +170,40 @@ export class World {
     this.height = 2 * Chunk.size;
     this.width = 3 * Chunk.size;
 
-    //let rng = mulberry32(this.seed);
-    let spawn = {x: this.width / 2, y: this.height / 2};
     let i = 0;
 
+    const spawn = {x: this.width / 2, y: this.height / 2};
+    const rng = mulberry32(this.seed);
+    const shops = [
+      Tile.Alchemist,      
+      Tile.Armoury,        
+      Tile.BlackMarket,    
+      Tile.Home,           
+      Tile.MagicShop,      
+      Tile.Store,          
+      Tile.Temple,         
+      Tile.Weaponsmith
+    ];
+    const shopPositions = [
+      {x: 11, y: 9},
+      {x: 17, y: 9},
+      {x: 25, y: 9},
+      {x: 31, y: 9},
+      {x: 11, y: 17},
+      {x: 17, y: 17},
+      {x: 25, y: 17},
+      {x: 31, y: 17}
+    ];
+
+    FRNG.shuffle(rng, shops);
+    console.log(shops);
+
     // Create Walls
-    for (i = 0; i < this.width; ++i) {
-      this.insert(Tile.Wall, i, 0);
-      this.insert(Tile.Wall, i, this.height - 1);
-    }
-    for (i = 1; i < (this.height - 1); ++i) {
-      this.insert(Tile.Wall, 0, i);
-      this.insert(Tile.Wall, this.width - 1, i);
+    this.drawRectangle(Tile.Wall, {x: 0, y: 0}, this.width, this.height);
+
+    // Create Shops
+    for (i = 0; i < shops.length; ++i) {
+      this.drawShop(rng, shops[i], shopPositions[i]);
     }
 
     return spawn;
