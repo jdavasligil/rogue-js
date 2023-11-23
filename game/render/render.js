@@ -310,8 +310,8 @@ export class RenderEngine {
    */
   renderAscii(em, cm) {
     const res = this.camera.resolution;
-    const textOffsetX = Math.floor(res / 12);
-    const textOffsetY = Math.floor(res / 8);
+    const textOffsetX = Math.round(res / 16);
+    const textOffsetY = Math.round(res / 6);
     const canvasGrids = Math.floor(this.canvas.height / res);
     const center = Math.floor(canvasGrids / 2);
 
