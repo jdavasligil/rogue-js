@@ -29,7 +29,9 @@ import { Tile } from "./tile.js";
 export class World {
   /**
    * Create a world template stored using object reference.
-   * @param {} Create a world template stored using object reference.
+   * @param {number} seed - Seed used to generate the world.
+   * @param {number} depth - Depth of the world.
+   * @param {number} time - Time elapsed since character creation in minutes.
    * @returns {World}
    */
   constructor(seed, depth=0, time=0) {

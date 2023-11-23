@@ -20,7 +20,7 @@ export const Resolution = {
 export class Camera {
   /**
     * Constructor for Camera.
-    * @param {import("./types").Position} position - e world position of the camera.
+    * @param {import("./types").Position} position - The world position of the camera.
     * @param {number} resolution - Pixels per tile.
     * @param {number} deadZone - Distance moved from center before camera moves.
     */

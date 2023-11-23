@@ -23,17 +23,6 @@ export const Event = {
 
 
 /**
- * Enumeration of all game states.
- * @enum {number}
- */
-export const GameState = {
-  MainMenu: 0,
-  Creation: 1,
-  Loading:  2,
-  Running:  3,
-}
-
-/**
  * Enumeration of all options in the main menu.
  * @enum {string}
  */

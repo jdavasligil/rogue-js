@@ -82,6 +82,34 @@ export class RenderEngine {
     }
   }
 
+  /**
+   * Used by renderer in ASCII mode to match tile ASCII symbol.
+   * Overridden by colors set by an entity.
+   * @param {Tile} tile - Tile enum.
+   * @returns {Color}
+   */
+  static matchTile(tile) {
+    switch(tile) {
+      case Tile.Floor:
+        return '.';
+      case Tile.OpenDoor:
+        return '\'';
+      case Tile.ClosedDoor:
+        return '+';
+      case Tile.Player:
+        return '@';
+      case Tile.StairsUp:
+        return '<'
+      case Tile.StairsDown:
+        return '>'
+      case Tile.Townsfolk:
+        return 't'
+
+      default:
+        return '*';
+    }
+  }
+
   // TODO TEST
   /**
    * Update the camera based on the player's position.
@@ -134,7 +162,13 @@ export class RenderEngine {
     // Draw Background
     this.ctx.fillStyle = Color.Brown;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.drawImage(img, frameWidth, frameWidth, this.canvas.width - 2 * frameWidth, this.canvas.height - 2 * frameWidth);
+    this.ctx.drawImage(
+      document.getElementById("bg-art"),
+      frameWidth,
+      frameWidth,
+      this.canvas.width - 2 * frameWidth,
+      this.canvas.height - 2 * frameWidth
+    );
 
     // Draw Title Text
     this.ctx.font = "small-caps bold 64px cursive";
@@ -229,13 +263,13 @@ export class RenderEngine {
   draw(em, cm) {
     switch (this.mode) {
       case RenderingMode.Ascii:
-        renderAscii(em, cm);
+        this.renderAscii(em, cm);
         break;
       case RenderingMode.Tile:
-        renderTile(em, cm);
+        this.renderTile(em, cm);
         break;
       default:
-        renderAscii(em, cm);
+        this.renderAscii(em, cm);
     }
   }
 
@@ -272,10 +306,14 @@ export class RenderEngine {
         if (entityID !== undefined) {
           tile = em.lookup(entityID).tile; // DANGER Assuming tile exists
         }
-        this.ctx.fillStyle = Renderer.matchTileColor(tile);
-        this.ctx.fillText(tile,
-          this.sideWidth + res * col + textOffsetX,
-          (1 + row) * res - textOffsetY);
+        this.ctx.fillStyle = RenderEngine.matchTileColor(tile);
+        if (tile !== undefined) {
+          this.ctx.fillText(
+            RenderEngine.matchTile(tile),
+            this.sideWidth + res * col + textOffsetX,
+            (1 + row) * res - textOffsetY
+          );
+        }
       }
     }
   }
@@ -283,8 +321,8 @@ export class RenderEngine {
   /**
    * TODO Tile rendering
    */
-  renderTile(ctx, world) {
-    renderAscii(ctx, world);
+  renderTile(em, cm) {
+    this.renderAscii(em, cm);
     console.log("Render Tile");
   }
 }

@@ -544,6 +544,24 @@ export class ChunkManager {
   }
 
   /**
+   * Try to replace the ID at a given world coordinate position.
+   * @param {import("./types.js").Position} position - World coordinate.
+   * @param {import("./entity-manager.js").EntityID} id - Entity ID.
+   * @returns {import("./entity-manager.js").EntityID | undefined}
+   */
+  replaceID(position, id) {
+    let chunk = this.getChunk(Chunk.worldToUV(position));
+    if (chunk === undefined) return id;
+
+    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    
+    return chunk.idGrid.replaceID(
+      {x: position.x - chunkWorldCoord.x, y: position.y - chunkWorldCoord.y},
+      id
+    );
+  }
+
+  /**
    * Reset the chunk manager. Called on world change.
    * @param {import("./types.js").Position} position - World position of player (stored as UV).
    * @param {number} width - World width (stored as UV).

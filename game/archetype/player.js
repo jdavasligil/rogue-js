@@ -8,6 +8,7 @@
 "use strict";
 
 import { Tile } from "../tile.js";
+import { Direction } from "../types.js";
 import { EntityType } from "./archetype.js";
 
 /**

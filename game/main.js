@@ -6,106 +6,104 @@
  */
 
 // TODO
-// [ ] Refactor into modules.
 // [ ] Character Creation
 // [ ] Level Generation
 // [ ] Combat
-// [ ] Serialization
 
 "use strict";
 
-import { mulberry32 } from "../lib/fast-random.js";
 import { RingBuffer } from "../lib/ring-buffer.js";
-import { Camera } from "./camera.js";
+import { Player } from "./archetype/player.js";
 import { ChunkManager } from "./chunk-manager.js";
 import { EntityManager } from "./entity-manager.js";
+import { World } from "./map-generation.js";
+import { RenderEngine } from "./render/render.js";
+import { Action, Direction, Event, MainMenuOption } from "./types.js";
 
-const T = require("./types.js");
+/**
+ * @typedef {Object} Game
+ * @property {boolean} debug - Debugging.
+ * @property {GameState} state - Active game state.
+ * @property {Array.<MainMenuOption>} menu - Main menu option list.
+ * @property {number} selection - Menu option selection.
+ * @property {Player | null} player - The player character.
+ * @property {RingBuffer} events - The event queue.
+ * @property {World | null} world - The generated world template.
+ * @property {ChunkManager | null} chunks - The chunks of the map loaded in memory.
+ * @property {EntityManager} entities - The entities loaded in memory.
+ * @property {RenderEngine} renderer - The renderer draws the game.
+ */
 
-// Get DOM elements and context
-const canvas = document.getElementById("game-canvas");
-const text = document.getElementById("game-text");
-const bgArt = document.getElementById("bg-art");
-
-// Constants
-const gridResolution = 18; // 18, 24, 32
-
-// A fixed seed is useful for recreating random state.
-const seed = 12345;
-
-// Enable this to turn on debug mode.
-const debug = false;
-
-// Random Number Generator
-const rng = mulberry32(seed);
+/**
+ * Enumeration of all game states.
+ * @enum {number}
+ */
+export const GameState = {
+  MainMenu: 0,
+  Creation: 1,
+  Loading:  2,
+  Running:  3,
+}
 
 // Load ancestries and classes from data
 //const Ancestries = await getJSON("./data/ancestries.json");
 //const Classes = await getJSON("./data/classes.json");
 
-
-// Handle camera movement
 /**
- * @param {Renderer} renderer - The render engine.
+ * Handle entity movement and collision.
+ * @param {import("./entity-manager.js").EntityID} id - An entity ID.
+ * @param {Direction} dir - Movement direction.
+ * @param {Game} game - Game data.
+ * @returns {boolean}
  */
-function moveCamera(renderer, em, dir) {
-}
+function moveEntity(id, dir, game) {
+  const entity = game.entities.lookup(id);
 
-// Handle player movement and collision
-// Takes in a direction map (up down left right)
-// Returns true for success, false for failure to move
-/**
- *
- */
-function moveEntity(entity_id, dir, world) {
-  const oldPosition = world.entities[entity_id - 1].position;
-  const currSquare = world.grid[oldPosition.y * world.width + oldPosition.x];
+  if (entity === undefined) return false;
+
   const newPosition = {
-    x: oldPosition.x + dir.x,
-    y: oldPosition.y + dir.y,
+    x: entity.position.x + dir.x,
+    y: entity.position.y + dir.y,
   }
 
   // Check bounds
   if (newPosition.x < 0
-   || newPosition.x >= world.width
+   || newPosition.x >= game.world.width
    || newPosition.y < 0
-   || newPosition.y >= world.height) {
+   || newPosition.y >= game.world.height) {
     return false;
   }
 
-  const nextSquare = world.grid[newPosition.y * world.width + newPosition.x];
-
   // Check collision for terrain
-  if (nextSquare.collision) {
+  if (game.chunks.getCollision(newPosition)) {
     return false;
   }
 
   // Check collision for entities
-  if (nextSquare.entity_id) {
-    if (world.entities[nextSquare.entity_id - 1].collision) {
-      return false;
-    }
+  const eid = game.chunks.getID(newPosition);
+  if (eid && game.entities.lookup(eid).collision) {
+    return false;
   }
 
-  currSquare.entity_id = 0;
-  nextSquare.entity_id = entity_id;
-  world.entities[entity_id - 1].position = newPosition;
+  game.chunks.replaceID(id);
 
-  // If the entity is the player, handle camera movement
-  if (entity_id === player.id) {
-    world.entities[0].orientation = dir;
-    world.events.push(Event.playerMoved);
+  entity.position.x = newPosition.x;
+  entity.position.y = newPosition.y;
+  entity.orientation = dir;
+
+  if (id === game.player.id) {
+    game.events.pushBack(Event.PlayerMoved);
   }
 
   return true;
 }
 
-// When an option is entered, this function will handle the state changes
 /**
- *
+ * Handles state menu state changes on option selection.
+ * @param {Game} game - Game data.
  */
-function handleSelectOption(world) {
-  switch(world.options[world.selection]) {
+function handleSelectOption(game) {
+  switch(game.menu[game.selection]) {
     case MainMenuOption.Continue:
       console.log("Continue");
       break;
@@ -113,16 +111,17 @@ function handleSelectOption(world) {
       console.log("NewGame");
       break;
     case MainMenuOption.Tutorial:
-      world.events.push(Event.enterTutorial);
+      game.events.pushBack(Event.EnterTutorial);
       break;
   }
 }
 
-// Event Listener for controlling menu input
+// 
 /**
- *
+ * Event Listener for controlling menu input
+ * @param {Game} game - Game data. 
  */
-function menuInput(world) {
+function menuInput(game) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
@@ -131,16 +130,16 @@ function menuInput(world) {
       switch (e.key) {
         case Action.MoveUp:
           keyDetected = true;
-          world.selection = (world.selection + world.options.length - 1) % world.options.length;
+          game.selection = (game.selection + game.menu.length - 1) % game.menu.length;
           break;
         case Action.MoveDown:
           keyDetected = true;
-          world.selection = (world.selection + 1) % world.options.length;
+          game.selection = (game.selection + 1) % game.menu.length;
           break;
         case Action.Enter:
           keyDetected = true;
-          world.events.push(Event.exitMainMenu);
-          handleSelectOption(world);
+          game.events.pushBack(Event.ExitMainMenu);
+          handleSelectOption(game);
           break;
       }
 
@@ -152,11 +151,11 @@ function menuInput(world) {
   });
 }
 
-// Event Listener for controlling player input
 /**
- *
+ * Event Listener for controlling player input.
+ * @param {Game} game - Game data.
  */
-function playerInput(world) {
+function playerInput(game) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
@@ -165,19 +164,19 @@ function playerInput(world) {
       switch (e.key) {
         case Action.MoveUp:
           keyDetected = true;
-          moveEntity(1, Direction.Up, world);
+          moveEntity(game.player.id, Direction.Up, game);// TODO Make work with manager
           break;
         case Action.MoveDown:
           keyDetected = true;
-          moveEntity(1, Direction.Down, world);
+          moveEntity(game.player.id, Direction.Down, game);
           break;
         case Action.MoveLeft:
           keyDetected = true;
-          moveEntity(1, Direction.Left, world);
+          moveEntity(game.player.id, Direction.Left, game);
           break;
         case Action.MoveRight:
           keyDetected = true;
-          moveEntity(1, Direction.Right, world);
+          moveEntity(game.player.id, Direction.Right, game);
           break;
       }
 
@@ -191,71 +190,100 @@ function playerInput(world) {
 
 // Handle all event signals and state transitions here
 /**
- *
+ * @param {Game} game - Game data
  */
-function handleEvents(ctx, world) {
-  for (let i = 0; i < world.events.length; i++) {
-    switch (world.events[i]) {
-      case Event.playerMoved:
-        moveCamera(world);
-        clearGrid(ctx);
-        drawGrid(ctx, world);
-        if (world.debug) {
-          drawDebugGrid(ctx, world);
-          drawDebugStaticZone(ctx, world);
+function handleEvents(game) {
+  while (game.events.length > 0) {
+    switch (game.events.popFront()) {
+      case Event.PlayerMoved:
+        game.chunks.update(game.player.position, game.world, true);
+        game.renderer.updateCamera(game.entities, game.player.id);
+        game.renderer.clearGrid();
+        game.renderer.draw(game.entities, game.chunks);
+        if (game.debug) {
+          game.renderer.drawDebugGrid();
+          game.renderer.drawDebugDeadZone();
         }
         break;
 
-      case Event.enterMainMenu:
-        world.state = GameState.MainMenu;
-        world.selection = 0;
-        break;
-      case Event.exitMainMenu:
-        clearCanvas(ctx);
+      case Event.EnterMainMenu:
+        game.state = GameState.MainMenu;
+        game.selection = 0;
         break;
 
-      case Event.enterTutorial:
-        world.state = GameState.Loading;
-        initializeTutorial(ctx, world);
-        world.state = GameState.Running;
+      case Event.ExitMainMenu:
+        game.renderer.clearCanvas();
+        break;
+
+      case Event.EnterTutorial:
+        game.state = GameState.Loading;
+
+        game.player = new Player();
+        game.entities.insert(game.player);
+        game.world = new World(1337);
+
+        let spawn = game.world.generateTown();
+        game.player.position = spawn;
+        game.renderer.camera.setPosition(spawn);
+
+        game.chunks = new ChunkManager(
+          spawn,
+          game.world.width,
+          game.world.height,
+          2
+        );
+        game.chunks.update(spawn, game.world, true);
+        game.renderer.draw(game.entities, game.chunks);
+
+        game.state = GameState.Running;
         break;
     }
   }
-  // Drain the event queue
-  // Prevents dangling pointer issues
-  while (world.events.pop());
 }
 
-// Core game: input is blocking
 /**
- *
+ * Core Game Loop using Finite State Machine logic.
  */
-async function runGame(ctx, world) {
+async function runGame() {
 
-  const world = newWorld();
+ // Get DOM elements and context
+ // const text = document.getElementById("game-text");
 
-  if (world.saveFileExists) {
-    world.options.push(MainMenuOption.Continue);
+  /** @type {Game} */
+  const Game = {
+    debug: true,
+    state: GameState.MainMenu,
+    menu: [],
+    selection: 0,
+    player: window.localStorage.getItem("save"),
+    events: new RingBuffer(),
+    world: null,
+    chunks: null,
+    entities: new EntityManager(),
+    renderer: new RenderEngine(document.getElementById("game-canvas")),
   }
-  world.options.push(MainMenuOption.NewGame);
-  world.options.push(MainMenuOption.Tutorial);
-  world.events.push(Event.enterMainMenu);
 
-  // Main Loop
+  if (Game.player !== null) {
+    Game.menu.push(MainMenuOption.Continue);
+  }
+  Game.menu.push(MainMenuOption.NewGame);
+  Game.menu.push(MainMenuOption.Tutorial);
+
+  Game.events.pushBack(Event.EnterMainMenu);
+
   while (true) {
 
-    // Handle all events and state transitions
-    handleEvents(ctx, world);
+    handleEvents(Game);
 
-    switch(world.state) {
+    switch(Game.state) {
       case GameState.MainMenu:
-        drawMainMenu(bgArt, ctx, world);
-        await menuInput(world);
-        clearCanvas(ctx);
+        Game.renderer.drawMainMenu(Game.selection, Game.menu);
+        await menuInput(Game);
+        Game.renderer.clearCanvas();
         break;
 
       case GameState.Running:
-        await playerInput(world);
+        await playerInput(Game);
         break;
 
       default:
@@ -264,92 +292,4 @@ async function runGame(ctx, world) {
   }
 }
 
-function initializeTutorial(ctx, world) {
-  const testMap =
-    "#####################\n" + 
-    "#...................#\n" +
-    "#...................#\n" +
-    "#..#............##..#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#......>.....'......#\n" +
-    "#......<............#\n" +
-    "#...........+.......#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#..##...........##..#\n" +
-    "#..##............#..#\n" +
-    "#...................#\n" +
-    "#...................#\n" +
-    "#####################\n"
-
-  stringToGrid(testMap, world);
-
-  spawnEntity({x: 10, y: 10}, world, player);
-  spawnEntity({x: 11, y: 10}, world, bob);
-
-  world.camera.position = world.entities[player.id - 1].position;
-
-  drawSideBar(ctx, 0, 0);
-  drawSideBar(ctx, canvas.width - sideWidth, 0);
-  drawGrid(ctx, world);
-  if (world.debug) {
-    drawDebugGrid(ctx, world);
-    drawDebugDeadZone(ctx, world);
-  }
-}
-
-
-// Bob is a prototypical NPC
-const bob = {
-  id: 0,
-  position: {x: 0, y: 0},
-  tile: Tile.Merchant,
-  collision: true,
-  visible: true,
-  name: "Bob",
-  type: "Normal Human",
-  description: "A bald man with a noticable underbite.",
-  isPerson: true,
-  morale: 7,
-  alignment: 0, // -5 to 5 (Chaos, Law)
-  level: 0,
-  experience: 0,
-  gold: 10,
-  inventory: [],
-  speed: 24, // squares per turn (10 in-game minutes)
-  saves: {
-      death: 14,
-      wands: 15,
-      paralysis: 16,
-      breath: 17,
-      spells: 18,
-    },
-  immunity: {
-      acid: 0,
-      cold: 0,
-      electric: 0,
-      fire: 0,
-      mundane: 0,
-      poison: 0,
-      sleep: 0,
-      petrification: 0,
-    },
-  hitPoints: 1,
-  maxHitPoints: 1,
-  armorClass: 9,
-  maxArmorClass: 9,
-  attack: 0, // 20 - THAC0
-}
-
-
-// GAME
-// If character exists in localStorage -> Load character and continue
-// else -> run character creation and initialize a new world
-
-//runGame(ctx);
+runGame();

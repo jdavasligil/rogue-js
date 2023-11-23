@@ -106,7 +106,7 @@ export class EntityManager {
   /**
    * Returns a pointer to the entity associated with the ID.
    * @param {EntityID} id - Entity ID to lookup.
-   * @returns {object}
+   * @returns {object | undefined}
    */
   lookup(id) {
     return this.data[EntityManager.getIDType(id)][EntityManager.getIDIndex(id)];

@@ -7,8 +7,8 @@
 
 "use strict";
 
-import { SERDE } from "../lib/serde";
-import { Tile } from "./tile";
+import { SERDE } from "../lib/serde.js";
+import { Tile } from "./tile.js";
   
 /** Class representing an NxN grid of tiles. */
 export class TileGrid {
