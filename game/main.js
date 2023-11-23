@@ -50,6 +50,18 @@ export const GameState = {
 //const Classes = await getJSON("./data/classes.json");
 
 /**
+ * Redraw the game grid.
+ * @param {Game} game - Game data.
+ */
+function redraw(game) {
+  game.renderer.draw(game.entities, game.chunks);
+  if (game.debug) {
+    game.renderer.drawDebugGrid();
+    game.renderer.drawDebugDeadZone();
+  }
+}
+
+/**
  * Handle entity movement and collision.
  * @param {import("./entity-manager.js").EntityID} id - An entity ID.
  * @param {Direction} dir - Movement direction.
@@ -179,6 +191,17 @@ function playerInput(game) {
           keyDetected = true;
           moveEntity(game.player.id, Direction.Right, game);
           break;
+        case Action.ZoomIn:
+          keyDetected = true;
+          game.renderer.camera.increaseResolution();
+          game.renderer.clearGrid();
+          redraw(game);
+          break;
+        case Action.ZoomOut:
+          keyDetected = true;
+          game.renderer.camera.decreaseResolution();
+          redraw(game);
+          break;
       }
 
       if (keyDetected) {
@@ -189,8 +212,8 @@ function playerInput(game) {
   });
 }
 
-// Handle all event signals and state transitions here
 /**
+ * Handle all event signals and state transitions here
  * @param {Game} game - Game data
  */
 function handleEvents(game) {
@@ -199,12 +222,7 @@ function handleEvents(game) {
       case Event.PlayerMoved:
         game.chunks.update(game.player.position, game.world);
         game.renderer.updateCamera(game.player);
-        game.renderer.clearGrid();
-        game.renderer.draw(game.entities, game.chunks);
-        if (game.debug) {
-          game.renderer.drawDebugGrid();
-          game.renderer.drawDebugDeadZone();
-        }
+        redraw(game);
         break;
 
       case Event.EnterMainMenu:
@@ -234,14 +252,9 @@ function handleEvents(game) {
           2
         );
         game.chunks.update(spawn, game.world, true);
-
         game.chunks.setID(spawn, game.player.id);
-        game.renderer.draw(game.entities, game.chunks);
 
-        if (game.debug) {
-          game.renderer.drawDebugGrid();
-          game.renderer.drawDebugDeadZone();
-        }
+        redraw(game);
 
         game.state = GameState.Running;
         break;

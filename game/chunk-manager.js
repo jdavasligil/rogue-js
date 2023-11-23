@@ -224,10 +224,8 @@ export class ChunkManager {
       ||  this.loaded(position)
       || !this.inBounds(position)
     ) {
-      console.log(`Dont load ${SERDE.posToStr(position)}`);
       return position;
     }
-    console.log(`LOAD ${SERDE.posToStr(position)}`);
 
     // Obtain free chunk index.
     let idx = this.bin.pop();

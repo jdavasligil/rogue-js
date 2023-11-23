@@ -43,6 +43,8 @@ export const Action = {
   MoveRight: "ArrowRight",
   Enter:     "Enter",
   Escape:    "Escape",
+  ZoomIn:    "=",
+  ZoomOut:   "-",
 }
 
 /**

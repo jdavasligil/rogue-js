@@ -8,8 +8,9 @@
 "use strict";
 
 import { Player } from "../archetype/player.js";
-import { ChunkManager } from "../chunk-manager.js";
+import { Chunk, ChunkManager } from "../chunk-manager.js";
 import { EntityManager } from "../entity-manager.js";
+import { World } from "../map-generation.js";
 import { Tile } from "../tile.js";
 import { MainMenuOption } from "../types.js";
 import { Camera } from "./camera.js";
@@ -210,18 +211,29 @@ export class RenderEngine {
    */
   drawDebugGrid() {
     const res = this.camera.resolution;
-    const lineCount = Math.floor(this.canvas.height / res) + 1;
+    const gridCount = Math.floor(this.canvas.height / res);
 
     this.ctx.strokeStyle = "green";
 
     // TODO: Replace Magic number 22 (number of row/col lines to draw)
-    for (let n = 0; n < lineCount; n++) {
+    for (let n = 0; n < (gridCount + 1); n++) {
+      if (((this.camera.position.y - Math.floor(gridCount / 2) + n) % Chunk.size) === 0) {
+        this.ctx.strokeStyle = "blue";
+      } else {
+        this.ctx.strokeStyle = "green";
+      }
       // Row Line
       this.ctx.beginPath();
       this.ctx.moveTo(this.sideWidth, n * res);
       this.ctx.lineTo(this.sideWidth + this.canvas.height, n * res);
       this.ctx.stroke();
       this.ctx.closePath();
+
+      if (((this.camera.position.x - Math.floor(gridCount / 2) + n) % Chunk.size) === 0) {
+        this.ctx.strokeStyle = "blue";
+      } else {
+        this.ctx.strokeStyle = "green";
+      }
       // Col Line
       this.ctx.beginPath();
       this.ctx.moveTo(this.sideWidth + n * res, 0);
@@ -278,6 +290,7 @@ export class RenderEngine {
    * @param {ChunkManager} cm - Chunk Manager.
    */
   draw(em, cm) {
+    this.clearGrid();
     switch (this.mode) {
       case RenderingMode.Ascii:
         this.renderAscii(em, cm);
