@@ -25,6 +25,7 @@ export const Color = {
   Black:      "#000000",
   Slate:      "#3C3A2D",
   Brown:      "#684E11",
+  Mocha:      "#171009",
   DarkBrown:  "#151004",
   Orange:     "#EFBC74",
   Blood:      "#FF1919",
@@ -61,6 +62,8 @@ export class RenderEngine {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.sideWidth = Math.floor((canvas.width - canvas.height) / 2);
+    this.bgColor = Color.Mocha;
+    this.frameColor = Color.Brown;
   }
 
   /**
@@ -283,22 +286,42 @@ export class RenderEngine {
   /**
    * Draws the background for the side bars used for the UI.
    */
-  drawSideBar(x, y) {
+  drawSideBars() {
+    this.ctx.strokeStyle = this.frameColor;
+    this.ctx.lineWidth = 3;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.sideWidth, 2);
+    this.ctx.lineTo(this.sideWidth, this.canvas.height - 2);
+    this.ctx.stroke();
+    this.ctx.closePath();
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.canvas.width - this.sideWidth, 2);
+    this.ctx.lineTo(this.canvas.width - this.sideWidth, this.canvas.height - 2);
+    this.ctx.stroke();
+    this.ctx.closePath();
+  }
+
+  /**
+   * Draws the background for the game grid.
+   */
+  drawBackground() {
     const frameWidth = 4;
-    this.ctx.fillStyle = Color.Brown;
-    this.ctx.strokeStyle = Color.DarkBrown;
-    this.ctx.fillRect(x, y, this.sideWidth, this.canvas.height);
-    this.ctx.strokeRect(x, y, this.sideWidth, this.canvas.height);
-    this.ctx.fillStyle = Color.DarkBrown;
-    this.ctx.fillRect(x + frameWidth, y + frameWidth, this.sideWidth - frameWidth * 2, this.canvas.height - frameWidth * 2);
+    this.ctx.fillStyle = this.frameColor;
+    this.ctx.strokeStyle = this.frameColor;
+    this.ctx.lineWidth = 2;
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillStyle = this.bgColor;
+    this.ctx.fillRect(frameWidth, frameWidth, this.canvas.width - frameWidth * 2, this.canvas.height - frameWidth * 2);
   }
 
   /**
    * Draws the UI.
    */
   drawUI() {
-    this.drawSideBar(0, 0);
-    this.drawSideBar(this.canvas.width - this.sideWidth, 0);
+    this.drawSideBars();
   }
 
   /**
@@ -309,6 +332,7 @@ export class RenderEngine {
     const gridCount = Math.floor(this.canvas.height / res);
 
     this.ctx.strokeStyle = "green";
+    this.ctx.lineWidth = 1;
 
     // TODO: Replace Magic number 22 (number of row/col lines to draw)
     for (let n = 0; n < (gridCount + 1); n++) {
@@ -368,6 +392,7 @@ export class RenderEngine {
     const lowerBound = halfHeight + zoneBuffer * res + lowShift;
 
     this.ctx.strokeStyle = "red";
+    this.ctx.lineWidth = 1;
 
     this.ctx.beginPath();
     this.ctx.moveTo(leftBound,  topBound);
@@ -386,6 +411,8 @@ export class RenderEngine {
    */
   draw(em, cm) {
     this.clearGrid();
+    this.drawBackground();
+
     switch (this.mode) {
       case RenderingMode.Ascii:
         this.renderAscii(em, cm);
@@ -396,6 +423,7 @@ export class RenderEngine {
       default:
         this.renderAscii(em, cm);
     }
+    this.drawUI();
   }
 
   /**

@@ -20,9 +20,6 @@ body {
 }
 .flex-box {
     margin: 5px;
-    background-color: #161616;
-    border-radius: 15px;
-    border: 2px solid #202020;
 }
 #game-window {
     width: 936px;
@@ -51,4 +48,6 @@ body {
     top: 50%;
     transform: translate(0, -50%);
     overflow: scroll;
+    background-color: #171009;
+    border: 3px solid #684E11;
 }

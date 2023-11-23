@@ -59,6 +59,7 @@ function redraw(game) {
     game.renderer.drawDebugGrid();
     game.renderer.drawDebugDeadZone();
   }
+  game.renderer.drawUI();
 }
 
 /**
@@ -260,7 +261,6 @@ function handleEvents(game) {
         game.chunks.setID(spawn, game.player.id);
 
         redraw(game);
-        game.renderer.drawUI();
 
         game.state = GameState.Running;
         break;
