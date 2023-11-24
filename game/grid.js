@@ -146,7 +146,6 @@ export class IDGrid {
 
     let idReplaced = arr.pop();
     arr.push(id);
-    console.log(`ID: ${id}, REP: ${idReplaced}`);
     return idReplaced;
   }
 

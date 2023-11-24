@@ -228,16 +228,15 @@ export class ChunkManager {
     }
 
     // Obtain free chunk index.
-    let idx = this.bin.pop();
-    idx = idx ? idx : 0;// TEMP
+    const idx = this.bin.pop();
 
     // Map chunk position to index for fast lookup.
     this.chunkMap[SERDE.posToStr(position)] = idx;
 
     // Obtain reference to chunk in buffer.
-    let chunk = this.chunkBuffer[idx];
-    let worldPos = Chunk.UVToWorld(position);
-    let rng = mulberry32(Chunk.hashSeed(world.seed, world.depth, position));
+    const chunk = this.chunkBuffer[idx];
+    const worldPos = Chunk.UVToWorld(position);
+    const rng = mulberry32(Chunk.hashSeed(world.seed, world.depth, position));
     let tile = 0;
 
     // Reset chunk data.
@@ -310,6 +309,7 @@ export class ChunkManager {
    */
   unloadChunk(position, world) {
     if (!this.loaded(position)) {
+      console.log(`NOT LOADED: ${SERDE.posToStr(position)}`)
       return position;
     }
 
@@ -382,12 +382,14 @@ export class ChunkManager {
     }
 
     // Update current chunk manager position.
-    this.position = this.playerPosition;
+    Object.assign(this.position, this.playerPosition);
 
     // Unload any chunks that are out of bounds.
-    let mapKeys = Object.keys(this.chunkMap);
+    const mapKeys = Object.keys(this.chunkMap);
     for (let i = 0; i < mapKeys.length; ++i) {
       if (!this.withinDistance(SERDE.strToPos(mapKeys[i]))) {
+        console.log(`MAP KEYS: ${mapKeys[i]}`);
+        console.log(`SERDE: ${SERDE.strToPos(mapKeys[i]).y}`);
         this.unloadChunk(SERDE.strToPos(mapKeys[i]), world);
       }
     }
@@ -406,10 +408,10 @@ export class ChunkManager {
    * @returns {Tile | undefined}
    */
   getTile(position) {
-    let chunk = this.getChunk(Chunk.worldToUV(position));
+    const chunk = this.getChunk(Chunk.worldToUV(position));
     if (chunk === undefined) return undefined;
 
-    let chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
+    const chunkWorldCoord = Chunk.UVToWorld(Chunk.worldToUV(position));
     return chunk.tileGrid.getTile({
       x: position.x - chunkWorldCoord.x,
       y: position.y - chunkWorldCoord.y

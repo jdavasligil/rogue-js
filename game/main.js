@@ -50,6 +50,36 @@ export const GameState = {
 //const Classes = await getJSON("./data/classes.json");
 
 /**
+ * Initialize the tutorial / test map.
+ * @param {Game} game - Game data.
+ * @param {number} seed - RNG seed.
+ */
+function initTutorial(game, seed) {
+  game.state = GameState.Loading;
+
+  game.player = new Player();
+  game.entities.insert(game.player);
+  game.world = new World(seed);
+
+  let spawn = game.world.generateTestMap();
+  game.player.position = spawn;
+  game.renderer.camera.setPosition(spawn);
+
+  game.chunks = new ChunkManager(
+    spawn,
+    game.world.width,
+    game.world.height,
+    1
+  );
+  game.chunks.update(spawn, game.world, true);
+  game.chunks.setID(spawn, game.player.id);
+
+  redraw(game);
+
+  game.state = GameState.Running;
+}
+
+/**
  * Redraw the game grid.
  * @param {Game} game - Game data.
  */
@@ -241,28 +271,7 @@ function handleEvents(game) {
         break;
 
       case Event.EnterTutorial:
-        game.state = GameState.Loading;
-
-        game.player = new Player();
-        game.entities.insert(game.player);
-        game.world = new World(1337);
-
-        let spawn = game.world.generateTown();
-        game.player.position = spawn;
-        game.renderer.camera.setPosition(spawn);
-
-        game.chunks = new ChunkManager(
-          spawn,
-          game.world.width,
-          game.world.height,
-          2
-        );
-        game.chunks.update(spawn, game.world, true);
-        game.chunks.setID(spawn, game.player.id);
-
-        redraw(game);
-
-        game.state = GameState.Running;
+        initTutorial(game, 3);
         break;
     }
   }

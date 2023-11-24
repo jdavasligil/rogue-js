@@ -186,14 +186,14 @@ export class World {
       Tile.Weaponsmith
     ];
     const shopPositions = [
-      {x: 11, y: 9},
+      {x: 10, y: 9},
       {x: 17, y: 9},
       {x: 25, y: 9},
-      {x: 31, y: 9},
-      {x: 11, y: 17},
+      {x: 32, y: 9},
+      {x: 10, y: 17},
       {x: 17, y: 17},
       {x: 25, y: 17},
-      {x: 31, y: 17}
+      {x: 32, y: 17}
     ];
 
     FRNG.shuffle(rng, shops);
@@ -205,6 +205,56 @@ export class World {
     for (i = 0; i < shops.length; ++i) {
       this.drawShop(rng, shops[i], shopPositions[i]);
     }
+
+    return spawn;
+  }
+
+  /**
+   * Test Map generation algorithm.
+   * @returns {import("./types").Position} spawn - Character spawn location.
+   */
+  generateTestMap() {
+    this.defaultTile = Tile.Floor;
+    this.height = 16 * Chunk.size;
+    this.width = 16 * Chunk.size;
+
+    let i = 0;
+
+    const spawn = {x: this.width / 2, y: this.height / 2};
+    const rng = mulberry32(this.seed);
+
+    const shops = [
+      Tile.Alchemist,      
+      Tile.Armoury,        
+      Tile.BlackMarket,    
+      Tile.Home,           
+      Tile.MagicShop,      
+      Tile.Store,          
+      Tile.Temple,         
+      Tile.Weaponsmith
+    ];
+    const shopPositions = [
+      {x: 10, y: 9},
+      {x: 17, y: 9},
+      {x: 25, y: 9},
+      {x: 32, y: 9},
+      {x: 10, y: 17},
+      {x: 17, y: 17},
+      {x: 25, y: 17},
+      {x: 32, y: 17}
+    ];
+
+    FRNG.shuffle(rng, shops);
+
+    // Create Walls
+    this.drawRectangle(Tile.Wall, {x: 0, y: 0}, this.width, this.height);
+
+    // Create Shops
+    for (i = 0; i < shops.length; ++i) {
+      this.drawShop(rng, shops[i], shopPositions[i]);
+    }
+
+    this.drawRectangle(Tile.ClosedDoor, {x: this.width / 4, y: this.height / 4}, this.width / 4, this.height / 4);
 
     return spawn;
   }

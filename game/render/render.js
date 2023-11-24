@@ -22,6 +22,7 @@ import { Camera } from "./camera.js";
  */
 export const Color = {
   White:      "#E1D9D1",
+  Night:      "#1E2229",
   Black:      "#000000",
   Slate:      "#3C3A2D",
   Brown:      "#684E11",
@@ -62,7 +63,7 @@ export class RenderEngine {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.sideWidth = Math.floor((canvas.width - canvas.height) / 2);
-    this.bgColor = Color.Mocha;
+    this.bgColor = Color.Night;
     this.frameColor = Color.Brown;
   }
 
