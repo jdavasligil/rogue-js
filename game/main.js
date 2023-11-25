@@ -71,7 +71,7 @@ function initTutorial(game, seed) {
     game.world.height,
     1
   );
-  game.chunks.update(spawn, game.world, true);
+  game.chunks.update(spawn, game.world, game.entities, true);
   game.chunks.setID(spawn, game.player.id);
 
   redraw(game);
@@ -263,7 +263,7 @@ function handleEvents(game) {
           game.world.time += 10;
         }
         // Chunks
-        game.chunks.update(game.player.position, game.world);
+        game.chunks.update(game.player.position, game.world, game.entities);
         game.renderer.updateCamera(game.player);
         redraw(game);
         break;

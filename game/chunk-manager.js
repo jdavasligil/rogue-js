@@ -264,8 +264,9 @@ export class ChunkManager {
     const worldPos = Chunk.UVToWorld(position);
     const rng = mulberry32(Chunk.hashSeed(world.seed, world.depth, position));
     const chunkStr = Chunk.toChunkString(world.depth, position);
-    const chunkDiff = this.chunkDiffCache[chunkStr];
     const entityDiff = this.entityDiffCache[chunkStr];
+
+    let chunkDiff = this.chunkDiffCache[chunkStr];
 
     let tile = 0;
 
@@ -284,7 +285,6 @@ export class ChunkManager {
         } else {
           chunk.tileGrid.setTile({x: x, y: y}, tile);
         }
-
         if (tileCollision(tile)) {
           chunk.colGrid.setBit({x: x, y: y});
         }
@@ -340,12 +340,13 @@ export class ChunkManager {
       return position;
     }
 
-    let idx = this.chunkMap[SERDE.posToStr(position)];
-    let chunk = this.chunkBuffer[idx];
+    const worldPos = Chunk.UVToWorld(position);
+    const idx = this.chunkMap[SERDE.posToStr(position)];
+    const chunk = this.chunkBuffer[idx];
+
     let chunkDiffStr = "";
     let entityDiffStr = "";
 
-    let worldPos = Chunk.UVToWorld(position);
     let worldTile = 0;
     let tile = 0;
     let entityID = 0;
@@ -356,7 +357,8 @@ export class ChunkManager {
         // Save chunk diffs.
         worldTile = world.lookup(worldPos.x + x, worldPos.y + y);
         tile = chunk.tileGrid.getTile({x: x, y: y});
-        if (tile !== worldTile) {
+        if (!tileEntity(worldTile) && tile !== worldTile) {
+          console.log(`TILE: ${tile} WORLD: ${worldTile}`);
           if (chunkDiffStr !== "") chunkDiffStr += ';';
           chunkDiffStr += Chunk.toChunkDiff({x: x, y: y}, tile);
         }
@@ -364,7 +366,7 @@ export class ChunkManager {
         // Save entity diffs.
         entityID = chunk.idGrid.getID({x: x, y: y});
         if (entityID > 0) {
-          if (entityDiffStr !== "") chunkDiffStr += ';';
+          if (entityDiffStr !== "") entityDiffStr += ';';
           entityDiffStr += `${x.toString(16)},${y.toString(16)}:${EntityManager.IDToStr(entityID)}`;
         }
       }
@@ -376,6 +378,7 @@ export class ChunkManager {
 
       // Save chunk diffs to Local Storage.
       window.localStorage.setItem(Chunk.toChunkString(world.depth, position), chunkDiffStr);
+      console.log("SAVE DIFF TO LOCAL STORAGE");
     }
 
     if (entityDiffStr !== "") {

@@ -7,7 +7,7 @@
 
 "use strict";
 
-import { EntityType } from "./archetype/archetype";
+import { EntityType } from "./archetype/archetype.js";
 
 /**
  * Enumeration of all map tiles including world template, terrain, and entities.
@@ -17,12 +17,11 @@ import { EntityType } from "./archetype/archetype";
  */
 export const Tile = {
   Empty:          0,
+  Bedrock:        1,
+  Floor:          2,
+  Wall:           3,
 
-  Player:         1,
-
-  Bedrock:        2,
-  Floor:          3,
-  Wall:           4,
+  Player:         4,
 
   OpenDoor:       5,
   ClosedDoor:     6,
@@ -89,7 +88,7 @@ export function tileCollision(tile) {
  * @returns {boolean}
  */
 export function tileEntity(tile) {
-  return tile > 4;
+  return tile > 3;
 }
 
 /**

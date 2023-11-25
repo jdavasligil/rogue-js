@@ -127,12 +127,14 @@ export class RenderEngine {
       case Tile.Floor:
         return '.';
       case Tile.OpenDoor:
-        return '\'';
+        return '`';
       case Tile.ClosedDoor:
         return '+';
+
       case Tile.PortcullisUp:
       case Tile.PortcullisDown:
         return ':';
+
       case Tile.StairsUp:
         return '<';
       case Tile.StairsDown:

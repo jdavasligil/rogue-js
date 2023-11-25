@@ -151,9 +151,14 @@ export class Door {
       case Tile.ClosedDoor:
       case Tile.Granite:
         door.tile = Tile.OpenDoor;
+        break;
 
       case Tile.PortcullisDown:
         door.tile = Tile.PortcullisUp;
+        break;
+
+      default:
+        break;
     }
   }
 
@@ -184,7 +189,7 @@ export class Door {
    */
   static randomize(rng, door, depth) {
     // Check for secret door.
-    if (FRNG.randInt(rng, 0, 100) < Door.secretChance) {
+    if (depth > 0 && FRNG.randInt(rng, 0, 100) < Door.secretChance) {
       door.tile = Tile.Granite;
       Door.HPFromMaterial(rng, door);
 
@@ -195,7 +200,7 @@ export class Door {
     door.material = FRNG.randPdf(rng, Door.materialChance[depth]);
 
     // Check for portcullis
-    if (FRNG.randInt(rng, 0, 100) < Door.portcullisChance) {
+    if (depth > 0 && FRNG.randInt(rng, 0, 100) < Door.portcullisChance) {
       door.tile = Tile.PortcullisDown;
       door.material = Math.max(Material.Iron, door.material);
       door.occlusion = false;
