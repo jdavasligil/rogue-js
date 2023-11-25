@@ -256,6 +256,13 @@ function handleEvents(game) {
   while (game.events.length > 0) {
     switch (game.events.popFront()) {
       case Event.PlayerMoved:
+        // Time Tracking
+        game.player.moves = (game.player.moves + 1) % game.player.speed;
+        if (game.player.moves === 0) {
+          game.player.turn += 1;
+          game.world.time += 10;
+        }
+        // Chunks
         game.chunks.update(game.player.position, game.world);
         game.renderer.updateCamera(game.player);
         redraw(game);

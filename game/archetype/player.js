@@ -9,17 +9,7 @@
 
 import { Tile } from "../tile.js";
 import { Direction } from "../types.js";
-import { EntityType } from "./archetype.js";
-
-/**
- * Enumeration of literacy levels.
- * @enum {number}
- */
-export const Literacy = {
-  Illiterate: 0,
-  Basic:      1,
-  Literate:   2,
-}
+import { EntityType, Literacy } from "./archetype.js";
 
 /** Data class representing player data */
 export class Player {
@@ -34,6 +24,11 @@ export class Player {
     this.orientation = Direction.Up;
     this.collision = true;
     this.visible = true;
+    this.occlusion = false;
+
+    this.seed = 0;
+    this.turn = 0; // Each turn is 10 minutes.
+    this.moves = 0; // Move counter: Turn increases in this.speed moves.
 
     this.name = "";
     this.ancestry = "";

@@ -7,6 +7,8 @@
 
 "use strict";
 
+import { EntityType } from "./archetype/archetype";
+
 /**
  * Enumeration of all map tiles including world template, terrain, and entities.
  * Limit of 256.
@@ -14,53 +16,55 @@
  * @enum {number}
  */
 export const Tile = {
-  Player:         0,
+  Empty:          0,
 
-  Floor:          1,
-  Wall:           2,
+  Player:         1,
 
-  OpenDoor:       3,
-  ClosedDoor:     4,
-  PortcullisUp:   5,
-  PortcullisDown: 6,
-  StairsUp:       7,
-  StairsDown:     8,
+  Bedrock:        2,
+  Floor:          3,
+  Wall:           4,
 
-  Bedrock:        9,
-  Granite:        10,
-  Rubble:         11,
-  Quartz:         12,
-  Copper:         13,
-  Silver:         14,
-  Gold:           15,
+  OpenDoor:       5,
+  ClosedDoor:     6,
+  PortcullisUp:   7,
+  PortcullisDown: 8,
+  StairsUp:       9,
+  StairsDown:     10,
 
-  Alchemist:      16,
-  Armoury:        17,
-  BlackMarket:    18,
-  Home:           19,
-  MagicShop:      20,
-  Store:          21,
-  Temple:         22,
-  Weaponsmith:    23,
+  Granite:        11,
+  Rubble:         12,
+  Quartz:         13,
+  Copper:         14,
+  Silver:         15,
+  Gold:           16,
 
-  RoomNode:       24,
+  Alchemist:      17,
+  Armoury:        18,
+  BlackMarket:    19,
+  Home:           20,
+  MagicShop:      21,
+  Store:          22,
+  Temple:         23,
+  Weaponsmith:    24,
 
-  Food:           25,
-  Item:           26,
-  Potion:         27,
-  Scroll:         28,
-  Treasure:       29,
-  Weapon:         30,
+  RoomNode:       25,
 
-  Beggar:         31,
-  Guard:          32,
-  Mercenary:      33,
-  Thief:          34,
-  Townsfolk:      35,
+  Food:           26,
+  Item:           27,
+  Potion:         28,
+  Scroll:         29,
+  Treasure:       30,
+  Weapon:         31,
 
-  Dog:            36,
-  Skeleton:       37,
-  Goblin:         38,
+  Beggar:         32,
+  Guard:          33,
+  Mercenary:      34,
+  Thief:          35,
+  Townsfolk:      36,
+
+  Dog:            37,
+  Skeleton:       38,
+  Goblin:         39,
 }
 
 /**
@@ -76,5 +80,76 @@ export function tileCollision(tile) {
 
     default:
       return false;
+  }
+}
+
+/**
+ * Whether or not the tile maps to an entity.
+ * @param {Tile} tile - Tile.
+ * @returns {boolean}
+ */
+export function tileEntity(tile) {
+  return tile > 4;
+}
+
+/**
+ * Matches a given tile to an entity type.
+ * @param {Tile} tile - A tile.
+ * @returns {EntityType}
+ */
+export function matchTileToType(tile) {
+  switch(tile) {
+    case OpenDoor:       
+    case ClosedDoor:     
+    case PortcullisUp:   
+    case PortcullisDown: 
+      return EntityType.Door;
+
+    case StairsUp:       
+    case StairsDown:     
+      return EntityType.Stairs;
+
+    case Granite:        
+    case Rubble:         
+    case Quartz:         
+    case Copper:         
+    case Silver:         
+    case Gold:           
+      return EntityType.Rock;
+
+    case Alchemist:      
+    case Armoury:        
+    case BlackMarket:    
+    case Home:           
+    case MagicShop:      
+    case Store:          
+    case Temple:         
+    case Weaponsmith:    
+      return EntityType.Shop;
+
+    case RoomNode:       
+      return EntityType.Room;
+
+    case Food:           
+    case Item:           
+    case Potion:         
+    case Scroll:         
+      return EntityType.Item;
+
+    case Treasure:       
+      return EntityType.Treasure;
+
+    case Weapon:         
+      return EntityType.Weapon;
+
+    case Beggar:         
+    case Guard:          
+    case Mercenary:      
+    case Thief:          
+    case Townsfolk:      
+    case Dog:            
+    case Skeleton:       
+    case Goblin:         
+      return EntityType.Monster;
   }
 }

@@ -23,6 +23,7 @@ export class Monster {
     this.orientation = Direction.Up;
     this.collision = true;
     this.visible = true;
+    this.occlusion = false;
 
     this.name = "";
     this.type = "";

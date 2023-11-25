@@ -13,9 +13,11 @@ import { GAMMA2 } from "../lib/gamma.js";
 import { SERDE } from "../lib/serde.js";
 import { BitGrid, IDGrid, TileGrid } from "./grid.js";
 import { World } from "./map-generation.js";
-import { mulberry32 } from "../lib/fast-random.js";
+import { FRNG, mulberry32 } from "../lib/fast-random.js";
 import { EntityManager } from "./entity-manager.js";
-import { Tile, tileCollision } from "./tile.js";
+import { Tile, matchTileToType, tileCollision, tileEntity } from "./tile.js";
+import { EntityType } from "./archetype/archetype.js";
+import { Door } from "./archetype/door.js";
 
 // LOCAL STORAGE FORMATS
 /**
@@ -145,6 +147,12 @@ export class ChunkManager {
     this.bin = [];
 
     /**
+     * Stores entity types that need to be generated for a given chunk.
+     * @type {Array.<EntityType>}
+     */
+    this.entityGenStack = [];
+
+    /**
      * Cache of chunk diffs.
      * @type {Object.<ChunkString, ChunkDiff>}
      */
@@ -213,12 +221,31 @@ export class ChunkManager {
   }
 
   /**
+   * Random entity generation from world map.
+   * @param {function(): number} rng - Random number generator (0,1).
+   * @param {Tile} tile - Tile from world map.
+   * @param {import("./types.js").Position} position - UV Position.
+   * @param {number} depth - Dungeon level.
+   * @param {Chunk} chunk - Chunk reference.
+   * @param {EntityManager} em - Reference to the entity manager.
+   */
+  generateEntity(rng, tile, position, depth, chunk, em) {
+    switch(tile) {
+      case Tile.ClosedDoor:
+        const door = new Door();
+        chunk.idGrid.setID(position, em.insert(door));
+        Door.randomize(rng, door, depth);
+    }
+  }
+
+  /**
    * Initialize a chunk by copying data from the underlying world.
    * @param {import("./types.js").Position} position - UV Position.
    * @param {World} world - Reference to the underlying world template.
+   * @param {EntityManager} em - Reference to the entity manager.
    * @returns {import("./types.js").Position | undefined}
    */
-  loadChunk(position, world) {
+  loadChunk(position, world, em) {
     if (
          !this.chunksAvailable()
       ||  this.loaded(position)
@@ -233,10 +260,13 @@ export class ChunkManager {
     // Map chunk position to index for fast lookup.
     this.chunkMap[SERDE.posToStr(position)] = idx;
 
-    // Obtain reference to chunk in buffer.
     const chunk = this.chunkBuffer[idx];
     const worldPos = Chunk.UVToWorld(position);
     const rng = mulberry32(Chunk.hashSeed(world.seed, world.depth, position));
+    const chunkStr = Chunk.toChunkString(world.depth, position);
+    const chunkDiff = this.chunkDiffCache[chunkStr];
+    const entityDiff = this.entityDiffCache[chunkStr];
+
     let tile = 0;
 
     // Reset chunk data.
@@ -249,10 +279,14 @@ export class ChunkManager {
       for (let x = 0; x < Chunk.size; ++x) {
         tile = world.lookup(worldPos.x + x, worldPos.y + y);
 
-        chunk.tileGrid.setTile({x: x, y: y}, tile);
+        if (tileEntity(tile) && (entityDiff === undefined)) {
+          this.generateEntity(rng, tile, {x: x, y: y}, world.depth, chunk, em);
+        } else {
+          chunk.tileGrid.setTile({x: x, y: y}, tile);
+        }
 
         if (tileCollision(tile)) {
-          chunk.colGrid.setBit({x: x, y: y})
+          chunk.colGrid.setBit({x: x, y: y});
         }
       }
     }
@@ -262,9 +296,6 @@ export class ChunkManager {
     let keyVal;
 
     // Run diffs.
-    let chunkStr = Chunk.toChunkString(world.depth, position);
-
-    let chunkDiff = this.chunkDiffCache[chunkStr];
     if (chunkDiff === undefined) {
       chunkDiff = window.localStorage.getItem(chunkStr);
     }
@@ -281,7 +312,6 @@ export class ChunkManager {
       delete this.chunkDiffCache[chunkStr];
     }
 
-    let entityDiff = this.entityDiffCache[chunkStr];
     if (entityDiff !== undefined) {
       let entityDiffs = entityDiff.split(';');
       for (i = 0; i < entityDiffs.length; ++i) {
@@ -293,9 +323,6 @@ export class ChunkManager {
       }
       // Remove diff from cache.
       delete this.entityDiffCache[chunkStr];
-    }
-    else {
-      // Run random entity generation (treasure, monsters, teleporters, doors, etc.). 
     }
 
     return undefined;
@@ -309,7 +336,7 @@ export class ChunkManager {
    */
   unloadChunk(position, world) {
     if (!this.loaded(position)) {
-      console.log(`NOT LOADED: ${SERDE.posToStr(position)}`)
+      alert(`NOT LOADED: ${SERDE.posToStr(position)}`)
       return position;
     }
 
@@ -368,10 +395,11 @@ export class ChunkManager {
    * Given the position of the player, update all chunks if necessary.
    * @param {import("./types.js").Position} position - Player world position.
    * @param {World} world - Reference to the underlying world template.
+   * @param {EntityManager} em - Reference to the entity manager.
    * @param {boolean} force - Whether or not to force an update to occur.
    * @returns {undefined}
    */
-  update(position, world, force=false) {
+  update(position, world, em, force=false) {
     this.playerPosition = Chunk.worldToUV(position);
     if (
          (this.playerPosition.x === this.position.x) 
@@ -388,8 +416,6 @@ export class ChunkManager {
     const mapKeys = Object.keys(this.chunkMap);
     for (let i = 0; i < mapKeys.length; ++i) {
       if (!this.withinDistance(SERDE.strToPos(mapKeys[i]))) {
-        console.log(`MAP KEYS: ${mapKeys[i]}`);
-        console.log(`SERDE: ${SERDE.strToPos(mapKeys[i]).y}`);
         this.unloadChunk(SERDE.strToPos(mapKeys[i]), world);
       }
     }
@@ -397,7 +423,7 @@ export class ChunkManager {
     // Load any chunks that need to be loaded.
     for (let v = (this.playerPosition.y - this.distance); v <= (this.playerPosition.y + this.distance); ++v) {
         for (let u = (this.playerPosition.x - this.distance); u <= (this.playerPosition.x + this.distance); ++u) {
-          this.loadChunk({x: u, y: v}, world);
+          this.loadChunk({x: u, y: v}, world, em);
       }
     }
   }

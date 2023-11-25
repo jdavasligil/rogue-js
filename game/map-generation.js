@@ -48,6 +48,14 @@ export class World {
   static tileStore = 0;
 
   /**
+   * Format time string for world time in `dd:HH:MM`.
+   * @return {string}
+   */
+  timeString() {
+    return `${Math.floor(this.time / 1440)}:${Math.floor(this.time / 60) % 24}:${this.time % 60}`;
+  }
+
+  /**
    * Convert a coordinate pair to a unique hash string.
    * @param {number} x - Local map x-coordinate.
    * @param {number} y - Local map y-coordinate.
