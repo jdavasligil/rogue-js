@@ -49,3 +49,23 @@ export const Material = {
   TrueSilver: 5,
   Adamantine: 6
 }
+
+export const LockType = {
+  None:      0,
+  Rusty:     1,
+  Simple:    2,
+  Sturdy:    3,
+  Intricate: 4,
+  Master:    5,
+  Magic:     6,
+}
+
+export const LockTrapType = {
+  None:      0,
+  Alarm:     1,
+  Rocks:     2,
+  Darkness:  3,
+  Cold:      4,
+  Poison:    5,
+  Fire:      6,
+}
