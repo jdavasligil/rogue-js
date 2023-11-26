@@ -20,6 +20,7 @@ import { EntityManager } from "./entity-manager.js";
 import { Action } from "./keybind.js";
 import { World } from "./map-generation.js";
 import { RenderEngine } from "./render/render.js";
+import { writeDescription } from "./render/text.js";
 import { Direction, Event, MainMenuOption } from "./types.js";
 
 /**
@@ -61,8 +62,17 @@ function initTutorial(game, seed) {
 
   game.player = new Player();
   const monster = new Monster();
-  monster.maxHitPoints = 1 ;
-  monster.hitPoints = 1 ;
+  monster.description = "An ugly man.";
+  monster.maxHitPoints = 37;
+  monster.hitPoints = 7;
+  game.player.scores.maxStr = 18;
+  game.player.scores.str = 8;
+  game.player.scores.maxDex = 8;
+  game.player.scores.dex = 5;
+  game.player.maxArmorClass = 2;
+  game.player.armorClass = 0;
+  game.player.weight = 801;
+
   game.entities.insert(game.player);
   game.entities.insert(monster);
   game.world = new World(seed);
@@ -76,7 +86,7 @@ function initTutorial(game, seed) {
     spawn,
     game.world.width,
     game.world.height,
-    1
+    2
   );
   game.chunks.update(game.player.position, game.world, game.entities, true);
   game.chunks.setID(game.player.position, game.player.id);
@@ -84,6 +94,8 @@ function initTutorial(game, seed) {
   game.player.target = monster;
 
   redraw(game);
+
+  writeDescription(document.getElementById('game-text'), monster.description);
 
   game.state = GameState.Running;
 }

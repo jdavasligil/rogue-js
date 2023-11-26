@@ -13,9 +13,9 @@ import { GAMMA2 } from "../lib/gamma.js";
 import { SERDE } from "../lib/serde.js";
 import { BitGrid, IDGrid, TileGrid } from "./grid.js";
 import { World } from "./map-generation.js";
-import { FRNG, mulberry32 } from "../lib/fast-random.js";
+import { mulberry32 } from "../lib/fast-random.js";
 import { EntityManager } from "./entity-manager.js";
-import { Tile, matchTileToType, tileCollision, tileEntity } from "./tile.js";
+import { Tile, tileCollision, tileEntity } from "./tile.js";
 import { EntityType } from "./archetype/archetype.js";
 import { Door } from "./archetype/door.js";
 
@@ -281,7 +281,8 @@ export class ChunkManager {
         tile = world.lookup(worldPos.x + x, worldPos.y + y);
 
         if (tileEntity(tile)) {
-          if (entityDiff === undefined) {
+          if (entityDiff === undefined) { // WHAT IF ENTITY LEAVES? MORE SPAWN
+            // BUG FIX IDEA: DELETE ENTITY TILES FOR MONSTERS IN WORLD TEMPLATE
             this.generateEntity(rng, tile, {x: x, y: y}, world.depth, chunk, em);
           }
         } else {

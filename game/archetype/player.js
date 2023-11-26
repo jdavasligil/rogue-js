@@ -79,6 +79,8 @@ export class Player {
     this.languages = [];
     this.abilities = [];
     this.spells = [];
+    this.spellSlots = [0,0,0,0,0,0];
+    this.maxSpellSlots = [0,0,0,0,0,0];
     this.skills = [];
     this.speed = 24; // Squares per turn (10 game-minutes)
     this.scores = {
@@ -125,6 +127,32 @@ export class Player {
   }
 
   /**
+   * Calculate the total weight of a player.
+   * @param {Player} player - Player data.
+   */
+  static weight(player) {
+    let total = 0;
+
+    total += player.coins.copper;
+    total += player.coins.silver;
+    total += player.coins.electrum;
+    total += player.coins.gold;
+    total += player.coins.platinum;
+
+    const equipment = Object.values(player.equipment);
+    for (let i = 0; i < equipment.length; ++i) {
+      total += (equipment[i] !== null) ? equipment[i].weight : 0;
+    }
+
+    const inventory = Object.values(player.inventory);
+    for (let i = 0; i < inventory.length; ++i) {
+      total += (inventory[i] !== null) ? inventory[i].weight : 0;
+    }
+
+    return total;
+  }
+
+  /**
    * Returns the typical modifier for ability score. Valid for all but CHA.
    * @param {number} score - Ability score.
    * @returns {number}
@@ -165,6 +193,16 @@ export class Player {
    * @returns {number}
    */
   static meleeBonus(player) {
+    return Player.getMod(player.scores.str) + player.attackBonus;
+  }
+
+  /**
+   * Returns the Missile Attack Bonus of the player character given.
+   * @param {Player} player - Player data.
+   * @returns {number}
+   */
+  static missileBonus(player) {
+    return Player.getMod(player.scores.dex) + player.attackBonus;
   }
 
   /**
@@ -258,7 +296,7 @@ export class Player {
       case 16:
       case 17:
       case 18:
-        return Literacy.Basic;
+        return Literacy.Literate;
       default:
         return 0;
     }

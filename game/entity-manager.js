@@ -32,7 +32,7 @@ export class EntityManager {
 
     /**
      * Data contains all living references to entities of each archetype.
-     * @type {Array.<Array.<number>>} 
+     * @type {Array.<Array.<object>>} 
      */
     this.data = new Array(types.length);
 

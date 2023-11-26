@@ -23,7 +23,7 @@ function appendText(text, s) {
 /**
  *
  */
-function writeDescription(text, s) {
+export function writeDescription(text, s) {
   text.innerHTML += "<p style='color: yellow;'>" + s + "</p><br />";
 }
 /**

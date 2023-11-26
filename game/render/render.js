@@ -391,9 +391,10 @@ export class RenderEngine {
     this.ctx.fillStyle = Color.Blue;
     this.ctx.textAlign = 'start';
 
-    this.ctx.fillText("Ancestry", XOFFSET, VSPACE * 2);
-    this.ctx.fillText("Class",    XOFFSET, 2*VSPACE + FSIZE);
-    this.ctx.fillText("Title",    XOFFSET, 2*VSPACE + 2*FSIZE);
+    this.ctx.fillText("Name",     XOFFSET, VSPACE * 2);
+    this.ctx.fillText("Ancestry", XOFFSET, VSPACE * 2 + FSIZE);
+    this.ctx.fillText("Class",    XOFFSET, 2*VSPACE + 2*FSIZE);
+    this.ctx.fillText("Title",    XOFFSET, 2*VSPACE + 3*FSIZE);
     
     // LEFT COL
 
@@ -401,35 +402,36 @@ export class RenderEngine {
     this.ctx.fillStyle = Color.White;
     
     // LEVEL, EXP, GOLD
-    this.ctx.fillText("LEVEL", XOFFSET, 3*VSPACE + 2*FSIZE);
-    this.ctx.fillText("EXP",   XOFFSET, 3*VSPACE + 3*FSIZE);
-    this.ctx.fillText("GOLD",  XOFFSET, 3*VSPACE + 4*FSIZE);
+    this.ctx.fillText("LEVEL",  XOFFSET, 3*VSPACE + 3*FSIZE);
+    this.ctx.fillText("EXP",    XOFFSET, 3*VSPACE + 4*FSIZE);
+    this.ctx.fillText("GOLD",   XOFFSET, 3*VSPACE + 5*FSIZE);
+
+    // WEIGHT
+    this.ctx.fillText("WT",  XOFFSET, 4*VSPACE + 5*FSIZE);
+    this.ctx.fillText("SPD", XOFFSET, 4*VSPACE + 6*FSIZE);
 
     // STATS
-    this.ctx.fillText("STR", XOFFSET, 4*VSPACE + 4*FSIZE);
-    this.ctx.fillText("DEX", XOFFSET, 4*VSPACE + 5*FSIZE);
-    this.ctx.fillText("CON", XOFFSET, 4*VSPACE + 6*FSIZE);
-    this.ctx.fillText("INT", XOFFSET, 4*VSPACE + 7*FSIZE);
-    this.ctx.fillText("WIS", XOFFSET, 4*VSPACE + 8*FSIZE);
-    this.ctx.fillText("CHA", XOFFSET, 4*VSPACE + 9*FSIZE);
+    this.ctx.fillText("STR", XOFFSET, 5*VSPACE + 6*FSIZE);
+    this.ctx.fillText("DEX", XOFFSET, 5*VSPACE + 7*FSIZE);
+    this.ctx.fillText("CON", XOFFSET, 5*VSPACE + 8*FSIZE);
+    this.ctx.fillText("INT", XOFFSET, 5*VSPACE + 9*FSIZE);
+    this.ctx.fillText("WIS", XOFFSET, 5*VSPACE + 10*FSIZE);
+    this.ctx.fillText("CHA", XOFFSET, 5*VSPACE + 11*FSIZE);
 
     // COMBAT TARGET
-    this.ctx.fillText("TR",  XOFFSET, 5*VSPACE + 9*FSIZE);
+    this.ctx.fillText("TR",  XOFFSET, 6*VSPACE + 11*FSIZE);
 
     // HP AC
-    this.ctx.fillText("AC",  XOFFSET, 6*VSPACE + 9*FSIZE);
-    this.ctx.fillText("HP",  XOFFSET, 6*VSPACE + 10*FSIZE);
+    this.ctx.fillText("AC",  XOFFSET, 7*VSPACE + 11*FSIZE);
+    this.ctx.fillText("HP",  XOFFSET, 7*VSPACE + 12*FSIZE);
 
-    this.ctx.fillText("MEL", XOFFSET, 7*VSPACE + 10*FSIZE);
-    this.ctx.fillText("MIS", XOFFSET, 7*VSPACE + 11*FSIZE);
+    this.ctx.fillText("MEL", XOFFSET, 8*VSPACE + 12*FSIZE);
+    this.ctx.fillText("MIS", XOFFSET, 8*VSPACE + 13*FSIZE);
 
     // SPELL SLOTS
-    this.ctx.fillText("L1",     XOFFSET, 8*VSPACE + 11*FSIZE);
-    this.ctx.fillText("L2",     XOFFSET, 8*VSPACE + 12*FSIZE);
-    this.ctx.fillText("L3",     XOFFSET, 8*VSPACE + 13*FSIZE);
-    this.ctx.fillText("L4",     XOFFSET, 8*VSPACE + 14*FSIZE);
-    this.ctx.fillText("L5",     XOFFSET, 8*VSPACE + 15*FSIZE);
-    this.ctx.fillText("L6",     XOFFSET, 8*VSPACE + 16*FSIZE);
+    this.ctx.fillText("SLVL", XOFFSET, 9*VSPACE + 13*FSIZE);
+    this.ctx.fillText("SSLT", XOFFSET, 9*VSPACE + 14*FSIZE);
+    this.ctx.fillText("SMAX", XOFFSET, 9*VSPACE + 15*FSIZE);
 
     // RIGHT COL
 
@@ -437,9 +439,23 @@ export class RenderEngine {
     this.ctx.textAlign = 'right';
     
     // LEVEL, EXP, GOLD
-    this.ctx.fillText(player.level.toString(),             RALIGN, 3*VSPACE + 2*FSIZE);
-    this.ctx.fillText(player.experience.toString(),        RALIGN, 3*VSPACE + 3*FSIZE);
-    this.ctx.fillText(Player.goldValue(player).toString(), RALIGN, 3*VSPACE + 4*FSIZE);
+    this.ctx.fillText(player.level.toString(),             RALIGN, 3*VSPACE + 3*FSIZE);
+    this.ctx.fillText(player.experience.toString(),        RALIGN, 3*VSPACE + 4*FSIZE);
+    this.ctx.fillText(Player.goldValue(player).toString(), RALIGN, 3*VSPACE + 5*FSIZE);
+
+    // WEIGHT, SPEED
+    this.weightColor(player.weight);
+    this.ctx.fillText(
+      (player.weight).toString(),
+      RALIGN - 5*FWIDTH,
+                                       4*VSPACE + 5*FSIZE
+    );
+    this.ctx.fillStyle = Color.Green;
+    this.ctx.fillText("/1600", RALIGN, 4*VSPACE + 5*FSIZE);
+
+    this.speedColor(player.speed);
+    this.ctx.fillText(player.speed.toString(), RALIGN, 4*VSPACE + 6*FSIZE);
+    this.ctx.fillStyle = Color.Green;
 
     // STATS
     // STR
@@ -448,12 +464,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.scores.str.toString(),
         RALIGN - FWIDTH * (player.scores.maxStr.toString().length + 1),
-        4*VSPACE + 4*FSIZE
+                                                              5*VSPACE + 6*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.scores.maxStr}`,   RALIGN, 4*VSPACE + 4*FSIZE);
+      this.ctx.fillText(`/${player.scores.maxStr}`,   RALIGN, 5*VSPACE + 6*FSIZE);
     } else {
-      this.ctx.fillText(player.scores.str.toString(), RALIGN, 4*VSPACE + 4*FSIZE);
+      this.ctx.fillText(player.scores.str.toString(), RALIGN, 5*VSPACE + 6*FSIZE);
     }
     // DEX
     if (player.scores.dex !== player.scores.maxDex) {
@@ -461,12 +477,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.scores.dex.toString(),
         RALIGN - FWIDTH * (player.scores.maxDex.toString().length + 1),
-        4*VSPACE + 5*FSIZE
+                                                              5*VSPACE + 7*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.scores.maxDex}`,   RALIGN, 4*VSPACE + 5*FSIZE);
+      this.ctx.fillText(`/${player.scores.maxDex}`,   RALIGN, 5*VSPACE + 7*FSIZE);
     } else {
-      this.ctx.fillText(player.scores.dex.toString(), RALIGN, 4*VSPACE + 5*FSIZE);
+      this.ctx.fillText(player.scores.dex.toString(), RALIGN, 5*VSPACE + 7*FSIZE);
     }
     // CON
     if (player.scores.con !== player.scores.maxCon) {
@@ -474,12 +490,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.scores.con.toString(),
         RALIGN - FWIDTH * (player.scores.maxCon.toString().length + 1),
-        4*VSPACE + 6*FSIZE
+                                                              5*VSPACE + 8*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.scores.maxCon}`,   RALIGN, 4*VSPACE + 6*FSIZE);
+      this.ctx.fillText(`/${player.scores.maxCon}`,   RALIGN, 5*VSPACE + 8*FSIZE);
     } else {
-      this.ctx.fillText(player.scores.con.toString(), RALIGN, 4*VSPACE + 6*FSIZE);
+      this.ctx.fillText(player.scores.con.toString(), RALIGN, 5*VSPACE + 8*FSIZE);
     }
     // INT
     if (player.scores.int !== player.scores.maxInt) {
@@ -487,12 +503,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.scores.int.toString(),
         RALIGN - FWIDTH * (player.scores.maxInt.toString().length + 1),
-        4*VSPACE + 7*FSIZE
+                                                              5*VSPACE + 9*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.scores.maxInt}`,   RALIGN, 4*VSPACE + 7*FSIZE);
+      this.ctx.fillText(`/${player.scores.maxInt}`,   RALIGN, 5*VSPACE + 9*FSIZE);
     } else {
-      this.ctx.fillText(player.scores.int.toString(), RALIGN, 4*VSPACE + 7*FSIZE);
+      this.ctx.fillText(player.scores.int.toString(), RALIGN, 5*VSPACE + 9*FSIZE);
     }
     // WIS
     if (player.scores.wis !== player.scores.maxWis) {
@@ -500,12 +516,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.scores.wis.toString(),
         RALIGN - FWIDTH * (player.scores.maxWis.toString().length + 1),
-        4*VSPACE + 8*FSIZE
+                                                              5*VSPACE + 10*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.scores.maxWis}`,   RALIGN, 4*VSPACE + 8*FSIZE);
+      this.ctx.fillText(`/${player.scores.maxWis}`,   RALIGN, 5*VSPACE + 10*FSIZE);
     } else {
-      this.ctx.fillText(player.scores.wis.toString(), RALIGN, 4*VSPACE + 8*FSIZE);
+      this.ctx.fillText(player.scores.wis.toString(), RALIGN, 5*VSPACE + 10*FSIZE);
     }
     // CHA
     if (player.scores.cha !== player.scores.maxCha) {
@@ -513,12 +529,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.scores.cha.toString(),
         RALIGN - FWIDTH * (player.scores.maxCha.toString().length + 1),
-        4*VSPACE + 9*FSIZE
+                                                              5*VSPACE + 11*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.scores.maxCha}`,   RALIGN, 4*VSPACE + 9*FSIZE);
+      this.ctx.fillText(`/${player.scores.maxCha}`,   RALIGN, 5*VSPACE + 11*FSIZE);
     } else {
-      this.ctx.fillText(player.scores.cha.toString(), RALIGN, 4*VSPACE + 9*FSIZE);
+      this.ctx.fillText(player.scores.cha.toString(), RALIGN, 5*VSPACE + 11*FSIZE);
     }
     
     // COMBAT TARGET HP
@@ -531,14 +547,14 @@ export class RenderEngine {
       this.ctx.fillText(
         '[',
         RALIGN - 11*FWIDTH,
-        5*VSPACE + 9*FSIZE
+        6*VSPACE + 11*FSIZE
       );
       this.statColor(ratio);
       for (let i = 0; i < HPnodes; ++i) {
         this.ctx.fillText(
           '*',
           RALIGN - (nodes + i + 1)*FWIDTH,
-          5*VSPACE + 9*FSIZE
+          6*VSPACE + 11*FSIZE
         );
       }
       this.ctx.fillStyle = Color.White;
@@ -546,13 +562,13 @@ export class RenderEngine {
         this.ctx.fillText(
           '*',
           RALIGN - (i + 1)*FWIDTH,
-          5*VSPACE + 9*FSIZE
+          6*VSPACE + 11*FSIZE
         );
       }
       this.ctx.fillText(
         ']',
         RALIGN,
-        5*VSPACE + 9*FSIZE
+        6*VSPACE + 11*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
     }
@@ -563,12 +579,12 @@ export class RenderEngine {
       this.ctx.fillText(
         player.armorClass.toString(),
         RALIGN - FWIDTH * (player.maxArmorClass.toString().length + 1),
-        6*VSPACE + 9*FSIZE
+        7*VSPACE + 11*FSIZE
       );
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.maxArmorClass}`, RALIGN, 6*VSPACE + 9*FSIZE);
+      this.ctx.fillText(`/${player.maxArmorClass}`, RALIGN, 7*VSPACE + 11*FSIZE);
     } else {
-      this.ctx.fillText(player.armorClass.toString(), RALIGN, 6*VSPACE + 9*FSIZE);
+      this.ctx.fillText(player.armorClass.toString(), RALIGN, 7*VSPACE + 11*FSIZE);
     }
 
     if (player.hitPoints !== player.maxHitPoints) {
@@ -576,25 +592,94 @@ export class RenderEngine {
       this.ctx.fillText(
         player.hitPoints.toString(),
         RALIGN - FWIDTH * (player.maxHitPoints.toString().length + 1),
-        6*VSPACE + 10*FSIZE
+                                                             7*VSPACE + 12*FSIZE
       );
       
       this.ctx.fillStyle = Color.Green;
-      this.ctx.fillText(`/${player.maxHitPoints}`, RALIGN, 6*VSPACE + 10*FSIZE);
+      this.ctx.fillText(`/${player.maxHitPoints}`,   RALIGN, 7*VSPACE + 12*FSIZE);
     } else {
-      this.ctx.fillText(player.hitPoints.toString(), RALIGN, 6*VSPACE + 10*FSIZE);
+      this.ctx.fillText(player.hitPoints.toString(), RALIGN, 7*VSPACE + 12*FSIZE);
     }
 
     // MELEE / MISSILE BONUS
+    if (Player.meleeBonus(player) < 0) {
+      this.ctx.fillStyle = Color.Blood;
+      this.ctx.fillText(
+        Player.meleeBonus(player).toString(),
+        RALIGN,
+        8*VSPACE + 12*FSIZE
+      );
+    } else {
+      this.ctx.fillText(
+        `+${Player.meleeBonus(player)}`,
+        RALIGN,
+        8*VSPACE + 12*FSIZE
+      );
+    }
+    if (Player.missileBonus(player) < 0) {
+      this.ctx.fillStyle = Color.Blood;
+      this.ctx.fillText(
+        Player.missileBonus(player).toString(),
+        RALIGN,
+        8*VSPACE + 13*FSIZE
+      );
+    } else {
+      this.ctx.fillStyle = Color.Green;
+      this.ctx.fillText(
+        `+${Player.missileBonus(player)}`,
+        RALIGN,
+        8*VSPACE + 13*FSIZE
+      );
+    }
+    this.ctx.fillStyle = Color.White;
+
+    // SPELL SLOTS
+    this.ctx.fillText("1 2 3 4 5 6", RALIGN, 9*VSPACE + 13*FSIZE);
+
+    this.ctx.fillStyle = Color.Blue;
     this.ctx.fillText(
-      (Player).toString(),
+      player.spellSlots[0].toString() + ' ' +
+      player.spellSlots[1].toString() + ' ' +
+      player.spellSlots[2].toString() + ' ' +
+      player.spellSlots[3].toString() + ' ' +
+      player.spellSlots[4].toString() + ' ' +
+      player.spellSlots[5].toString(),
       RALIGN,
-      7*VSPACE + 10*FSIZE
+      9*VSPACE + 14*FSIZE
+    );
+    this.ctx.fillStyle = Color.Green;
+    this.ctx.fillText(
+      player.maxSpellSlots[0].toString() + ' ' +
+      player.maxSpellSlots[1].toString() + ' ' +
+      player.maxSpellSlots[2].toString() + ' ' +
+      player.maxSpellSlots[3].toString() + ' ' +
+      player.maxSpellSlots[4].toString() + ' ' +
+      player.maxSpellSlots[5].toString(),
+      RALIGN,
+      9*VSPACE + 15*FSIZE
     );
 
     // -- RIGHT BAR --
 
     // World Info
+  }
+
+  /**
+   * Determines the text color depending on weight.
+   * @param {number} weight - Character weight.
+   */
+  weightColor(weight) {
+    if (weight <= 400) {
+      this.ctx.fillStyle = Color.Green;
+    } else if (weight <= 600) {
+      this.ctx.fillStyle = Color.YellowGreen;;
+    } else if (weight <= 800) {
+      this.ctx.fillStyle = Color.Caution;
+    } else if (weight <= 1600) {
+      this.ctx.fillStyle = Color.RedOrange;
+    } else if (weight > 1600) {
+      this.ctx.fillStyle = Color.Blood;
+    }
   }
 
   /**
@@ -619,6 +704,13 @@ export class RenderEngine {
         default:
           this.ctx.fillStyle = Color.Blue;
       }
+  }
+
+  /**
+   * Determines the color of the player based on speed.
+   * @param {number} speed - Player speed.
+   */
+  speedColor(speed) {
   }
 
   /**

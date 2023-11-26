@@ -225,6 +225,7 @@ export class World {
     this.defaultTile = Tile.Floor;
     this.height = 16 * Chunk.size;
     this.width = 16 * Chunk.size;
+    this.depth = 5;
 
     let i = 0;
 
