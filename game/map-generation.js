@@ -89,6 +89,15 @@ export class World {
     return World.tileStore;
   }
 
+  /**
+   * Delete the tile at the specified location.
+   * @param {number} x_w - x-coordinate in world coordinates. 
+   * @param {number} x_w - y-coordinate in world coordinates. 
+   * @returns {undefined}
+   */
+  delete(x_w, y_w) {
+    delete this.tiles[World.coordToString(x_w, y_w)];
+  }
 
   /**
    * Draw a rectangle of tiles.

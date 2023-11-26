@@ -107,8 +107,8 @@ export class Player {
     this.hitDice = {n: 1, d: 10};
     this.hitPoints = 10;
     this.maxHitPoints = 10;
-    this.armorClass = 9; // Lower is better!
-    this.maxArmorClass = 9;
+    this.armorClass = 10; 
+    this.maxArmorClass = 10;
     this.attackBonus = 0;
   }
 

@@ -69,8 +69,8 @@ function initTutorial(game, seed) {
   game.player.scores.str = 8;
   game.player.scores.maxDex = 8;
   game.player.scores.dex = 5;
-  game.player.maxArmorClass = 2;
-  game.player.armorClass = 0;
+  game.player.maxArmorClass = 15;
+  game.player.armorClass = 10;
   game.player.weight = 801;
 
   game.entities.insert(game.player);

@@ -575,7 +575,7 @@ export class RenderEngine {
 
     // AC HP
     if (player.armorClass !== player.maxArmorClass) {
-      this.statColor((20 - player.armorClass)/(20 - player.maxArmorClass));
+      this.statColor(player.armorClass / player.maxArmorClass);
       this.ctx.fillText(
         player.armorClass.toString(),
         RALIGN - FWIDTH * (player.maxArmorClass.toString().length + 1),

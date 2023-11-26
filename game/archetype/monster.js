@@ -25,6 +25,8 @@ export class Monster {
     this.collision = true;
     this.visible = true;
     this.occlusion = false;
+    
+    this.asleep = false;
 
     this.name = "";
     this.type = "";
@@ -64,8 +66,8 @@ export class Monster {
     this.hitDice = "";
     this.hitPoints = 1;
     this.maxHitPoints = 1;
-    this.armorClass = 9;
-    this.maxArmorClass = 9;
+    this.armorClass = 10;
+    this.maxArmorClass = 10;
     this.attackBonus = 0;
   }
 

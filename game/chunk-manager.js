@@ -281,9 +281,10 @@ export class ChunkManager {
         tile = world.lookup(worldPos.x + x, worldPos.y + y);
 
         if (tileEntity(tile)) {
-          if (entityDiff === undefined) { // WHAT IF ENTITY LEAVES? MORE SPAWN
-            // BUG FIX IDEA: DELETE ENTITY TILES FOR MONSTERS IN WORLD TEMPLATE
+          if (entityDiff === undefined) {
             this.generateEntity(rng, tile, {x: x, y: y}, world.depth, chunk, em);
+            world.delete(worldPos.x + x, worldPos.y + y);
+            chunk.tileGrid.setTile({x: x, y: y}, world.defaultTile);
           }
         } else {
           chunk.tileGrid.setTile({x: x, y: y}, tile);
