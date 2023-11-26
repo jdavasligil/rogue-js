@@ -33,39 +33,6 @@ export const MainMenuOption = {
 }
 
 /**
- * Enumeration of all game action keybinds.
- * @enum {string}
- */
-export const Action = {
-  MoveUp:    "ArrowUp",
-  MoveDown:  "ArrowDown",
-  MoveLeft:  "ArrowLeft",
-  MoveRight: "ArrowRight",
-  Enter:     "Enter",
-  Escape:    "Escape",
-  ZoomIn:    "=",
-  ZoomOut:   "-",
-  Debug:     "`",
-}
-
-/**
- * Enumeration of all possible interaction modes.
- *
- * Normal - Open door, initiate trade.
- * Combat - Attack target, break object.
- * Social - Attempt to initiate dialogue.
- * Stealth - Pick lock, pick pocket, steal, sneak.
- * @readonly 
- * @enum {number}
- */
-export const InteractMode = {
-  Normal:   0, 
-  Combat:   1,
-  Social:   2,
-  Stealth:  3, 
-}
-
-/**
  * Enumeration of all movement directions.
  * @enum {{x: number, y: number}}
  */

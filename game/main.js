@@ -13,12 +13,14 @@
 "use strict";
 
 import { RingBuffer } from "../lib/ring-buffer.js";
-import { Player } from "./archetype/player.js";
+import { Monster } from "./archetype/monster.js";
+import { InteractMode, Player } from "./archetype/player.js";
 import { ChunkManager } from "./chunk-manager.js";
 import { EntityManager } from "./entity-manager.js";
+import { Action } from "./keybind.js";
 import { World } from "./map-generation.js";
 import { RenderEngine } from "./render/render.js";
-import { Action, Direction, Event, MainMenuOption } from "./types.js";
+import { Direction, Event, MainMenuOption } from "./types.js";
 
 /**
  * @typedef {Object} Game
@@ -58,11 +60,16 @@ function initTutorial(game, seed) {
   game.state = GameState.Loading;
 
   game.player = new Player();
+  const monster = new Monster();
+  monster.maxHitPoints = 1 ;
+  monster.hitPoints = 1 ;
   game.entities.insert(game.player);
+  game.entities.insert(monster);
   game.world = new World(seed);
 
   let spawn = game.world.generateTestMap();
   game.player.position = spawn;
+  monster.position = {x: spawn.x + 2, y: spawn.y};
   game.renderer.camera.setPosition(spawn);
 
   game.chunks = new ChunkManager(
@@ -71,8 +78,10 @@ function initTutorial(game, seed) {
     game.world.height,
     1
   );
-  game.chunks.update(spawn, game.world, game.entities, true);
-  game.chunks.setID(spawn, game.player.id);
+  game.chunks.update(game.player.position, game.world, game.entities, true);
+  game.chunks.setID(game.player.position, game.player.id);
+  game.chunks.setID(monster.position, monster.id);
+  game.player.target = monster;
 
   redraw(game);
 
@@ -89,7 +98,9 @@ function redraw(game) {
     game.renderer.drawDebugGrid();
     game.renderer.drawDebugDeadZone();
   }
-  game.renderer.drawUI();
+  if (game.player && game.world) {
+    game.renderer.drawUI(game.player, game.world);
+  }
 }
 
 /**
@@ -225,12 +236,31 @@ function playerInput(game) {
         case Action.ZoomIn:
           keyDetected = true;
           game.renderer.camera.increaseResolution();
-          game.renderer.clearGrid();
           redraw(game);
           break;
         case Action.ZoomOut:
           keyDetected = true;
           game.renderer.camera.decreaseResolution();
+          redraw(game);
+          break;
+        case Action.NormalMode:
+          keyDetected = true;
+          game.player.mode = InteractMode.Normal;
+          redraw(game);
+          break;
+        case Action.SocialMode:
+          keyDetected = true;
+          game.player.mode = InteractMode.Social;
+          redraw(game);
+          break;
+        case Action.StealthMode:
+          keyDetected = true;
+          game.player.mode = InteractMode.Stealth;
+          redraw(game);
+          break;
+        case Action.CombatMode:
+          keyDetected = true;
+          game.player.mode = InteractMode.Combat;
           redraw(game);
           break;
         case Action.Debug:

@@ -280,8 +280,10 @@ export class ChunkManager {
       for (let x = 0; x < Chunk.size; ++x) {
         tile = world.lookup(worldPos.x + x, worldPos.y + y);
 
-        if (tileEntity(tile) && (entityDiff === undefined)) {
-          this.generateEntity(rng, tile, {x: x, y: y}, world.depth, chunk, em);
+        if (tileEntity(tile)) {
+          if (entityDiff === undefined) {
+            this.generateEntity(rng, tile, {x: x, y: y}, world.depth, chunk, em);
+          }
         } else {
           chunk.tileGrid.setTile({x: x, y: y}, tile);
         }
@@ -317,7 +319,7 @@ export class ChunkManager {
       for (i = 0; i < entityDiffs.length; ++i) {
         keyVal = entityDiffs[i].split(':'); // E.g., "a,3:ID"
         uv.x = parseInt(keyVal[0], 16); // 10
-        uv.y = parseInt(keyVal[0].slice(keyVal.indexOf(',') + 1), 16); // 3
+        uv.y = parseInt(keyVal[0].slice(keyVal[0].indexOf(',') + 1), 16); // 3
 
         chunk.idGrid.setID(uv, EntityManager.StrToID(keyVal[1])); // 250
       }
@@ -358,14 +360,13 @@ export class ChunkManager {
         worldTile = world.lookup(worldPos.x + x, worldPos.y + y);
         tile = chunk.tileGrid.getTile({x: x, y: y});
         if (!tileEntity(worldTile) && tile !== worldTile) {
-          console.log(`TILE: ${tile} WORLD: ${worldTile}`);
           if (chunkDiffStr !== "") chunkDiffStr += ';';
           chunkDiffStr += Chunk.toChunkDiff({x: x, y: y}, tile);
         }
 
         // Save entity diffs.
         entityID = chunk.idGrid.getID({x: x, y: y});
-        if (entityID > 0) {
+        if (entityID !== undefined) {
           if (entityDiffStr !== "") entityDiffStr += ';';
           entityDiffStr += `${x.toString(16)},${y.toString(16)}:${EntityManager.IDToStr(entityID)}`;
         }
@@ -378,7 +379,6 @@ export class ChunkManager {
 
       // Save chunk diffs to Local Storage.
       window.localStorage.setItem(Chunk.toChunkString(world.depth, position), chunkDiffStr);
-      console.log("SAVE DIFF TO LOCAL STORAGE");
     }
 
     if (entityDiffStr !== "") {

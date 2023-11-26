@@ -8,6 +8,7 @@
 "use strict";
 
 import { Tile } from "../tile.js";
+import { Direction } from "../types.js";
 import { EntityType } from "./archetype.js";
 
 /** Data class representing monster data */
@@ -18,7 +19,7 @@ export class Monster {
    */
   constructor() {
     this.id = (0xFF - EntityType.Monster) << 24;
-    this.tile = Tile.Monster;
+    this.tile = Tile.Townsfolk;
     this.position = {x:0, y:0};
     this.orientation = Direction.Up;
     this.collision = true;

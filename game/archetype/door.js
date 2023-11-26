@@ -156,9 +156,6 @@ export class Door {
       case Tile.PortcullisDown:
         door.tile = Tile.PortcullisUp;
         break;
-
-      default:
-        break;
     }
   }
 
@@ -174,9 +171,11 @@ export class Door {
       case Tile.OpenDoor:
         door.occlusion = true;
         door.tile = Tile.OpenDoor;
+        break;
 
       case Tile.PortcullisUp:
         door.tile = Tile.PortcullisDown;
+        break;
     }
   }
 

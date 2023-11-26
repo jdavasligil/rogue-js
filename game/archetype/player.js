@@ -11,6 +11,23 @@ import { Tile } from "../tile.js";
 import { Direction } from "../types.js";
 import { EntityType, Literacy } from "./archetype.js";
 
+/**
+ * Enumeration of all possible interaction modes.
+ *
+ * Normal - Open door, initiate trade.
+ * Combat - Attack target, break object.
+ * Social - Attempt to initiate dialogue.
+ * Stealth - Pick lock, pick pocket, steal, sneak.
+ * @readonly 
+ * @enum {number}
+ */
+export const InteractMode = {
+  Normal:  0, 
+  Social:  1,
+  Stealth: 2, 
+  Combat:  3,
+}
+
 /** Data class representing player data */
 export class Player {
   /**
@@ -25,6 +42,11 @@ export class Player {
     this.collision = true;
     this.visible = true;
     this.occlusion = false;
+
+    /** @type {object | null} */
+    this.target = null;
+
+    this.mode = InteractMode.Normal;
 
     this.seed = 0;
     this.turn = 0; // Each turn is 10 minutes.
@@ -89,11 +111,17 @@ export class Player {
   }
 
   /**
-   * Deserialize from JSON.
-   * @param {object} json - JSON object.
+   * Calculate the gold value of a player.
+   * @param {Player} player - Player data.
    */
-  static from(json) {
-    return Object.assign(new Player(), json);
+  static goldValue(player) {
+    return Math.floor(
+      (10.00)*player.coins.platinum +
+              player.coins.gold +
+       (0.50)*player.coins.electrum + 
+       (0.10)*player.coins.silver +
+       (0.01)*player.coins.copper
+    );
   }
 
   /**
@@ -129,6 +157,14 @@ export class Player {
       default:
         return 0;
     }
+  }
+
+  /**
+   * Returns the Melee Attack Bonus of the player character given.
+   * @param {Player} player - Player data.
+   * @returns {number}
+   */
+  static meleeBonus(player) {
   }
 
   /**
