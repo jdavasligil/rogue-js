@@ -1,0 +1,9 @@
+# TILEMAP
+
+A tilemap is a single image containing a grid of sprites for each tile. A sprite is rendered by specifying the pixel offset, height, and width in code.
+
+## Specification
+* Each sprite is a 16x16 pixel bitmap.
+* A row represents a single archetype of entity (e.g., item, monster, character).
+* The archetype order follows the enum order specified in archetype.js.
+* Only static tiles are stored in the tilemap. Animations are specified elsewhere.

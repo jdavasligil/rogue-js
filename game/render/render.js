@@ -574,6 +574,7 @@ export class RenderEngine {
     }
 
     // AC HP
+    // TODO CHANGE TO ASCENDING AC
     if (player.armorClass !== player.maxArmorClass) {
       this.statColor((20 - player.armorClass)/(20 - player.maxArmorClass));
       this.ctx.fillText(
@@ -723,7 +724,6 @@ export class RenderEngine {
     this.ctx.strokeStyle = "green";
     this.ctx.lineWidth = 1;
 
-    // TODO: Replace Magic number 22 (number of row/col lines to draw)
     for (let n = 0; n < (gridCount + 1); n++) {
       if (((this.camera.position.y - Math.floor(gridCount / 2) + n) % Chunk.size) === 0) {
         this.ctx.strokeStyle = "blue";

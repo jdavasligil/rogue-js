@@ -12,18 +12,20 @@
  * @enum {number}
  */
 export const EntityType = {
-  Player:   0,
-  Room:     1,
-  Monster:  2,
-  Trap:     3,
-  Door:     4,
-  Stairs:   5,
-  Treasure: 6,
-  Teleport: 7,
-  Portal:   8,
-  Rock:     9,
-  Shop:     10,
-  Weapon:   11,
+  Player:    0,
+
+  Character: 0,
+  Room:      0,
+  Monster:   0,
+  Trap:      0,
+  Door:      0,
+  Portal:    0,
+  Treasure:  0,
+  Teleport:  0,
+  Rock:      0,
+  Shop:      0,
+  Weapon:    0,
+  Item:      0,
 }
 
 /**
